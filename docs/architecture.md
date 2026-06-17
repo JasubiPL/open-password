@@ -113,7 +113,7 @@ open-password/
 ```
 
 > **Plataforma objetivo:** se prueba en **Android** (Expo Go en dispositivo físico).
-> **Expo SDK 55**. iOS soportado pero no es la prioridad de testing.
+> **Expo SDK 56** (última versión). iOS soportado pero no es la prioridad de testing.
 >
 > **Icono y splash (Expo `app.json` / `app.config`):**
 > ```jsonc
@@ -125,7 +125,7 @@ open-password/
 >       "backgroundColor": "#0E1116"
 >     }
 >   },
->   "splash": {                       // o el plugin `expo-splash-screen` en SDK 55
+>   "splash": {                       // o el plugin `expo-splash-screen` en SDK 56
 >     "image": "./assets/branding/splash-icon.png",
 >     "resizeMode": "contain",
 >     "backgroundColor": "#0E1116"
@@ -160,10 +160,16 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 
 ## Plan de implementación (por fases)
 
-### Fase 0 — Scaffolding
-- `npx create-expo-app` con TypeScript + Expo Router. Configurar ESLint/Prettier.
-- Instalar dependencias listadas arriba. Crear estructura de carpetas.
-- README inicial con setup, arquitectura de seguridad y guía de contribución.
+### Fase 0 — Scaffolding ✅ (hecho)
+- Proyecto Expo en **SDK 56** (última versión): `expo` 56.0.12, `react-native` 0.85.3,
+  `react` 19.2, TypeScript 6.0, con **Expo Router** (app dir en `src/app`).
+- `app.json` cableado con la marca: `icon`/`adaptiveIcon`/`splash` → `assets/branding/*`,
+  fondo `#0E1116`, acento teal. Estructura `src/` del plan creada (crypto, db, lib, store,
+  icons, components) con README por carpeta.
+- `.npmrc` con `legacy-peer-deps=true` (instala limpio). Pantalla inicial mínima con el
+  logo. Verificado: `tsc` OK, `expo-doctor` 21/21, bundle Android OK.
+- Pendiente menor: lint (ESLint/Prettier) y revisar fonts material-symbols que entran al
+  bundle (~5MB) por defecto.
 
 ### Fase 1 — Núcleo de cripto (`src/crypto/`)
 - `kdf.ts`: derivar Master Key (Argon2id) y auth hash.
