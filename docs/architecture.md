@@ -160,10 +160,16 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 
 ## Plan de implementación (por fases)
 
-### Fase 0 — Scaffolding
-- `npx create-expo-app` con TypeScript + Expo Router. Configurar ESLint/Prettier.
-- Instalar dependencias listadas arriba. Crear estructura de carpetas.
-- README inicial con setup, arquitectura de seguridad y guía de contribución.
+### Fase 0 — Scaffolding ✅ (hecho)
+- Proyecto Expo creado y **pinneado a SDK 55** (`expo` 55.0.26, `react-native` 0.83.6,
+  `react` 19.2, TypeScript 5.9) con **Expo Router** (app dir en `src/app`).
+- `app.json` cableado con la marca: `icon`/`adaptiveIcon`/`splash` → `assets/branding/*`,
+  fondo `#0E1116`, acento teal. Estructura `src/` del plan creada (crypto, db, lib, store,
+  icons, components) con README por carpeta.
+- `.npmrc` con `legacy-peer-deps=true` (instala limpio en SDK 55). Pantalla inicial mínima
+  con el logo. Verificado: `tsc` OK, `expo-doctor` 19/19, bundle Android OK.
+- Pendiente menor: lint (ESLint/Prettier) y revisar fonts material-symbols que entran al
+  bundle (~5MB) por defecto.
 
 ### Fase 1 — Núcleo de cripto (`src/crypto/`)
 - `kdf.ts`: derivar Master Key (Argon2id) y auth hash.
