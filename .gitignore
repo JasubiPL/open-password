@@ -1,0 +1,36 @@
+# Claude Code (uso local, no se versiona)
+.claude/
+
+# Dependencias
+node_modules/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.orig.*
+
+# Builds nativos
+/ios/
+/android/
+*.apk
+*.aab
+*.ipa
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# Sistema operativo / editor
+.DS_Store
+*.pem
+.vscode/
+.idea/
