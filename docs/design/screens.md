@@ -43,7 +43,7 @@ cifrado cero-conocimiento, desbloqueo biométrico, generador, import CSV e icono
   `assets/branding/splash-icon.png`) centrado sobre **fondo oscuro `#0E1116`** — es la
   convención: el splash muestra la marca del producto. Opcional: nombre "Open Password" e
   indicador de carga sutil. Al pie, **crédito discreto del autor** *"JasubiP® 2015–2026"*.
-- **Config Expo (SDK 55):** `expo-splash-screen` → `image: ./assets/branding/splash-icon.png`,
+- **Config Expo (SDK 56):** `expo-splash-screen` → `image: ./assets/branding/splash-icon.png`,
   `resizeMode: "contain"`, `backgroundColor: "#0E1116"`.
 - **Estados:** cargando. Sin interacción.
 
