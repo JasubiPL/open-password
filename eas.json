@@ -13,11 +13,7 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "android": { "buildType": "apk" },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://ktdwhoeacqnwupnnykux.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_KEY": "sb_publishable_eUPcEPhukdogfrZAM8GFhg_S-o5vYVC"
-      }
+      "android": { "buildType": "apk" }
     },
     "production": {
       "channel": "production",
