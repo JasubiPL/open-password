@@ -1,31 +1,39 @@
-import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 
 /**
- * Overlay modal a pantalla completa para operaciones que bloquean el hilo de JS
+ * Overlay a pantalla completa para operaciones que bloquean el hilo de JS
  * (p. ej. derivación Argon2id). El `ActivityIndicator` se anima en el hilo
- * nativo, así que sigue girando aunque JS esté ocupado; el modal además impide
- * que el usuario toque la UI muerta durante el cálculo.
+ * nativo, así que sigue girando aunque JS esté ocupado.
+ *
+ * Es un `View` absoluto (no un `Modal`): el `Modal` de RN puede quedarse trabado
+ * si la pantalla navega/desmonta mientras está visible (causaba un cuelgue de la
+ * UI tras crear la bóveda). Un View se desmonta limpio con la pantalla.
  */
 export function LoadingOverlay({ visible, message }: { visible: boolean; message: string }) {
+  if (!visible) return null;
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <ActivityIndicator size="large" color={Colors.accent} />
-          <Text style={styles.message}>{message}</Text>
-        </View>
+    <View style={styles.overlay}>
+      <View style={styles.card}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+        <Text style={styles.message}>{message}</Text>
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(14,17,22,0.7)',
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(14,17,22,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 100,
+    elevation: 100,
   },
   card: {
     backgroundColor: Colors.surface,

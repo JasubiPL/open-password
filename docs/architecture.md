@@ -210,11 +210,26 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   acelerar Argon2 en tests. Verificado: `npm test` 26/26, `tsc` OK, expo-doctor 21/21.
 - ⚠️ Pendiente de verificación end-to-end contra un proyecto Supabase real (falta `.env`).
 
-### Fase 3 — Bóvedas e items (CRUD local + cifrado)
-- `expo-sqlite` para cache. Store Zustand de bóvedas/items.
-- Crear/editar/borrar bóvedas con icono y color.
-- Crear/ver/editar/borrar entradas (cifradas). Copiar al portapapeles con auto-limpieza.
-- Búsqueda en memoria sobre datos descifrados; filtros por categoría.
+### Fase 3 — Bóvedas e items (CRUD local + cifrado) ✅ (hecho)
+- **Cache local** (`src/db/database.ts`, `expo-sqlite`): tablas `vaults`/`items` con solo
+  ciphertext + metadatos (timestamps, `vault_id`, flag `deleted` para la Fase 4).
+- **Cifrado de registros** (`src/lib/vaultCrypto.ts`): cada registro se serializa a JSON y se
+  cifra con la Vault Key (AES-256-GCM); se descifra en memoria.
+- **Store Zustand** (`src/store/vaults.ts`): bóvedas/items descifrados en RAM, CRUD que
+  persiste ciphertext; init/carga al desbloquear, limpieza en lock/logout.
+- **Pantallas**: lista de bóvedas (con FAB y estado vacío), crear/editar/borrar bóveda
+  (selector de color e icono con `@expo/vector-icons`), detalle de bóveda con **búsqueda en
+  memoria**, crear/editar/borrar entrada, y detalle de entrada con mostrar/ocultar
+  contraseña, abrir URL y **copiar con auto-limpieza** del portapapeles (`expo-clipboard`).
+- **Catálogo de plataformas** (`src/constants/platforms.ts`): apps comunes (Google, Outlook,
+  Instagram…) con icono de marca a color (FontAwesome6 brands) y URL; al elegir una se
+  autocompleta la URL/título, u opción "Personalizada". Logos full-color (gradientes) → Fase 5.
+- **Login/unlock más rápidos:** la Vault Key envuelta viaja en `user_metadata`, así el login
+  evita una llamada extra a `profiles` y el **unlock es offline** (lee la sesión local; solo
+  cuesta Argon2id).
+- **Tests** (Jest): round-trip de `vaultCrypto`. Verificado: `npm test` 32/32, `tsc` OK,
+  expo-doctor 21/21.
+- Nota: persistencia **solo local** (sin sync). La sincronización con Supabase es la Fase 4.
 
 ### Fase 4 — Sync con Supabase
 - `supabase/migrations`: schema + políticas RLS (`auth.uid()`).

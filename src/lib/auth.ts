@@ -140,25 +140,44 @@ export async function login(email: string, masterPassword: string): Promise<void
   });
   if (error) throw mapAuthError(error);
 
-  // Cuentas creadas con confirmación de email aún no tienen fila en `profiles`
-  // (su salt/Vault Key viven en user_metadata): la materializamos en el primer
-  // login para que el resto de la app y el prelogin de otros dispositivos funcionen.
-  const profile = await ensureProfile(data.user, saltB64);
-  const vaultKey = unprotectVaultKey(profile.protected_vault_key, masterKey);
+  // La Vault Key envuelta viaja en user_metadata, así que la desenvolvemos sin
+  // una llamada extra a `profiles` (menos latencia de red en el login).
+  const meta = (data.user as AuthUser | null)?.user_metadata ?? {};
+  const protectedVaultKey = meta.protected_vault_key ?? (await fetchProfile()).protected_vault_key;
+  const vaultKey = unprotectVaultKey(protectedVaultKey, masterKey);
   setVaultKey(vaultKey);
+
+  // Aseguramos la fila en `profiles` en segundo plano (no bloquea el desbloqueo).
+  // Necesaria para cuentas creadas con confirmación de email y para el sync (Fase 4).
+  if (data.user?.id && meta.protected_vault_key) {
+    void upsertProfile(data.user.id, meta.salt ?? saltB64, meta.protected_vault_key).catch(() => {});
+  }
 }
 
 /**
  * Desbloquea la bóveda cuando ya hay sesión de Supabase (re-apertura/auto-lock).
- * Re-deriva la Master Key con la contraseña maestra y desenvuelve la Vault Key.
+ *
+ * Lee salt + Vault Key envuelta de la sesión local (`user_metadata`), sin red:
+ * el desbloqueo funciona offline y es instantáneo salvo por Argon2id.
  */
 export async function unlock(masterPassword: string): Promise<void> {
-  const profile = await fetchProfile();
-  const salt = base64ToBytes(profile.salt);
+  const { data } = await supabase.auth.getSession();
+  const meta = (data.session?.user as AuthUser | undefined)?.user_metadata ?? {};
+
+  let saltB64 = meta.salt;
+  let protectedVaultKey = meta.protected_vault_key;
+  if (!saltB64 || !protectedVaultKey) {
+    // Fallback (cuentas antiguas sin metadata): leer de `profiles`.
+    const profile = await fetchProfile();
+    saltB64 = profile.salt;
+    protectedVaultKey = profile.protected_vault_key;
+  }
+
+  const salt = base64ToBytes(saltB64);
   await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
   const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
   // unprotect lanza si la contraseña es incorrecta (fallo de autenticación GCM).
-  const vaultKey = unprotectVaultKey(profile.protected_vault_key, masterKey);
+  const vaultKey = unprotectVaultKey(protectedVaultKey, masterKey);
   setVaultKey(vaultKey);
 }
 
@@ -199,22 +218,4 @@ async function upsertProfile(userId: string, saltB64: string, protectedVaultKey:
 interface AuthUser {
   id: string;
   user_metadata?: { salt?: string; protected_vault_key?: string };
-}
-
-/**
- * Garantiza que exista el perfil en `profiles`. Si falta (cuenta creada con
- * confirmación de email), lo materializa desde `user_metadata`.
- */
-async function ensureProfile(user: AuthUser | null | undefined, saltB64: string): Promise<ProfileRow> {
-  const existing = await fetchProfileOrNull();
-  if (existing) return existing;
-
-  const meta = user?.user_metadata ?? {};
-  const protectedVaultKey = meta.protected_vault_key;
-  const metaSalt = meta.salt ?? saltB64;
-  if (!user?.id || !protectedVaultKey) {
-    throw new Error('Perfil no encontrado y faltan datos para recrearlo.');
-  }
-  await upsertProfile(user.id, metaSalt, protectedVaultKey);
-  return { salt: metaSalt, protected_vault_key: protectedVaultKey };
 }

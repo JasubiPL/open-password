@@ -13,6 +13,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { clearVaultKey, isUnlocked } from '@/crypto';
 import * as auth from '@/lib/auth';
+import { useVaults, wipeLocalVaults } from '@/store/vaults';
 
 export type SessionStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -77,11 +78,13 @@ export const useSession = create<SessionState>((set, get) => ({
 
   lock: () => {
     clearVaultKey();
+    useVaults.getState().reset(); // limpia los datos descifrados de RAM
     set({ unlocked: false });
   },
 
   logout: async () => {
     await auth.logout();
+    await wipeLocalVaults(); // borra el cache local (RAM + disco)
     set({ status: 'signedOut', email: null, unlocked: false });
   },
 }));

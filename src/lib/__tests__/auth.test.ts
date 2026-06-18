@@ -26,6 +26,10 @@ jest.mock('../supabase', () => {
     for (const [e, u] of users) if (e.toLowerCase() === email.toLowerCase()) return u;
     return undefined;
   };
+  const userById = (id: string) => {
+    for (const [e, u] of users) if (u.id === id) return { email: e, ...u };
+    return undefined;
+  };
 
   const supabase = {
     auth: {
@@ -59,6 +63,15 @@ jest.mock('../supabase', () => {
         return { data: { user: { id: u.id, email, user_metadata: u.metadata } }, error: null };
       },
       resend: async () => ({ error: null }),
+      getSession: async () => {
+        if (!current) return { data: { session: null }, error: null };
+        const u = userById(current);
+        if (!u) return { data: { session: null }, error: null };
+        return {
+          data: { session: { access_token: `tok-${u.id}`, user: { id: u.id, email: u.email, user_metadata: u.metadata } } },
+          error: null,
+        };
+      },
       signOut: async () => {
         current = null;
         return { error: null };
