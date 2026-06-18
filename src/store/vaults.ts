@@ -10,6 +10,7 @@ import { getDb, clearDatabase } from '@/db/database';
 import { decryptRecord, encryptRecord } from '@/lib/vaultCrypto';
 import { newId } from '@/lib/id';
 import { syncNow } from '@/lib/sync';
+import { notifyKeysSynced } from '@/lib/notifications';
 
 /** Empuja cambios locales al servidor en segundo plano (best-effort, sin red → no-op). */
 function pushInBackground(): void {
@@ -122,6 +123,8 @@ export const useVaults = create<VaultsState>((set, get) => ({
       // Solo recargamos si el pull trajo cambios remotos (evita parpadeos).
       if (result.pulled > 0) await get().load();
       if (!result.skipped) set({ lastSyncedAt: Date.now(), lastSyncOk: true });
+      // Avisamos cuando se subieron claves locales pendientes (p. ej. al reconectar).
+      if (result.pushed > 0) void notifyKeysSynced(result.pushed);
     } catch {
       set({ lastSyncOk: false }); // sin red / error: queda pendiente para el próximo intento
     } finally {

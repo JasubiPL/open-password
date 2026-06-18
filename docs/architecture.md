@@ -267,6 +267,10 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   desde Ajustes → "Sincronizar ahora", y (d) un push best-effort tras cada mutación. Offline-first:
   todo se guarda local (cifrado) marcado `dirty` y se sube al reconectar. (Nota: el **primer login
   en un dispositivo** sí requiere red; los desbloqueos posteriores son offline.)
+- **Aviso de sincronización** (`src/lib/notifications.ts`, `expo-notifications`): cuando un `sync()`
+  sube claves locales pendientes (`pushed > 0`, p. ej. al reconectar tras crearlas offline), se
+  dispara una **notificación local del sistema** (mensaje genérico, sin datos sensibles; se muestra
+  también en foreground). Best-effort: no-op sin permiso o sin el módulo.
 - **Tests** (Jest): `sync.test.ts` (6) con SQLite + Supabase en memoria cubre push, pull, LWW
   (ambos sentidos), soft-delete y sin-sesión.
 - Trade-off: `updated_at` es reloj del cliente (posible skew entre dispositivos, aceptado para
