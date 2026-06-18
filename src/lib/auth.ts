@@ -50,6 +50,24 @@ function yieldToUI(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+/** Traduce errores de Supabase a mensajes claros para el usuario. */
+function mapAuthError(error: { message?: string }): Error {
+  const msg = (error.message ?? '').toLowerCase();
+  if (msg.includes('already registered') || msg.includes('already exists')) {
+    return new Error('Ya existe una cuenta con ese email. Iniciá sesión.');
+  }
+  if (msg.includes('rate limit')) {
+    return new Error(
+      'Supabase limitó el envío de emails por demasiados intentos. Esperá un rato, ' +
+        'o desactivá "Confirm email" en Supabase para no enviar correos.',
+    );
+  }
+  if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
+    return new Error('Email o contraseña maestra incorrectos.');
+  }
+  return new Error(error.message ?? 'Error de autenticación.');
+}
+
 /** Crea la cuenta, el perfil cifrado y desbloquea la bóveda en esta sesión. */
 export async function register(email: string, masterPassword: string): Promise<void> {
   const normalizedEmail = normalizeEmail(email);
@@ -63,16 +81,20 @@ export async function register(email: string, masterPassword: string): Promise<v
     email: normalizedEmail,
     password: authHashToPassword(masterKey, masterPassword),
   });
-  if (error) throw error;
+  if (error) throw mapAuthError(error);
 
-  const userId = data.user?.id;
-  if (!userId) {
-    // Con confirmación de email activada puede no haber usuario/ sesión inmediata.
-    throw new Error('No se pudo crear el usuario. ¿Está activada la confirmación por email?');
+  // El flujo cero-conocimiento necesita sesión inmediata para crear el perfil
+  // cifrado (RLS exige auth.uid()). Si no hay sesión, el proyecto tiene activada
+  // la confirmación de email, que este flujo no soporta.
+  if (!data.session || !data.user?.id) {
+    throw new Error(
+      'Tu proyecto de Supabase requiere confirmar el email. Desactivá "Confirm email" ' +
+        'en Authentication → Providers → Email para poder crear la bóveda.',
+    );
   }
 
   const { error: profileError } = await supabase.from(PROFILES_TABLE).insert({
-    user_id: userId,
+    user_id: data.user.id,
     salt: bytesToBase64(salt),
     protected_vault_key: protectedVaultKey,
   });
@@ -105,7 +127,7 @@ export async function login(email: string, masterPassword: string): Promise<void
     email: normalizedEmail,
     password: authHashToPassword(masterKey, masterPassword),
   });
-  if (error) throw error;
+  if (error) throw mapAuthError(error);
 
   const profile = await fetchProfile();
   const vaultKey = unprotectVaultKey(profile.protected_vault_key, masterKey);

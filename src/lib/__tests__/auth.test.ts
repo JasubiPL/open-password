@@ -21,11 +21,12 @@ jest.mock('../supabase', () => {
   const supabase = {
     auth: {
       signUp: async ({ email, password }: { email: string; password: string }) => {
-        if (users.has(email)) return { data: { user: null }, error: { message: 'ya existe' } };
+        if (users.has(email)) return { data: { user: null, session: null }, error: { message: 'already registered' } };
         const id = `u${++seq}`;
         users.set(email, { id, password });
         current = id;
-        return { data: { user: { id, email } }, error: null };
+        // Sin confirmación de email: signUp devuelve sesión inmediata.
+        return { data: { user: { id, email }, session: { access_token: `tok-${id}`, user: { id, email } } }, error: null };
       },
       signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
         const u = users.get(email);
