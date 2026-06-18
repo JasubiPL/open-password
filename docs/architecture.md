@@ -183,10 +183,25 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   autenticación GCM y manejo de la Vault Key. Verificado: `npm test`, `tsc` OK,
   expo-doctor 21/21.
 
-### Fase 2 — Auth + onboarding
-- Pantallas registro/login con Supabase Auth usando el auth hash derivado.
-- Crear `profiles` con salt + `protected_vault_key` al registrarse.
-- Pantalla `unlock` con contraseña maestra y opción biométrica (`expo-local-authentication`).
+### Fase 2 — Auth + onboarding ✅ (hecho)
+- **Cliente Supabase** (`src/lib/supabase.ts`) con sesión persistida en AsyncStorage
+  (`react-native-url-polyfill`); env `EXPO_PUBLIC_SUPABASE_URL/ANON_KEY` (`.env.example`).
+- **Servicio de auth** (`src/lib/auth.ts`): `register` (signUp con auth hash + perfil cifrado),
+  `login` (prelogin RPC → derivar → autenticar → desenvolver), `unlock` (re-deriva con la
+  maestra y desenvuelve), `logout`.
+- **Store de sesión** (`src/store/session.ts`, Zustand): ejes `status` (sesión) y `unlocked`
+  (Vault Key en RAM); bootstrap + suscripción a `onAuthStateChange`.
+- **Biometría** (`src/lib/biometric.ts`, `expo-local-authentication` + secure store).
+- **Migración** `supabase/migrations/0001_profiles.sql`: tabla `profiles` (salt +
+  `protected_vault_key`), RLS por `auth.uid()` y RPC `get_salt_by_email` (prelogin; salt no
+  es secreto, permite enumeración — aceptado para el MVP, estilo Bitwarden).
+- **Pantallas** (Expo Router): `onboarding`, `register` (con medidor de fuerza y aviso de
+  no-recuperación), `login`, `unlock` (maestra + biometría), placeholder `vaults` y guards
+  por grupo (`(auth)` / `(app)`).
+- **Tests** (Jest): orquestación register→login→unlock recupera la misma Vault Key, fallos
+  con contraseña/email incorrectos, y medidor de fuerza. `configureArgon2Params` permite
+  acelerar Argon2 en tests. Verificado: `npm test` 26/26, `tsc` OK, expo-doctor 21/21.
+- ⚠️ Pendiente de verificación end-to-end contra un proyecto Supabase real (falta `.env`).
 
 ### Fase 3 — Bóvedas e items (CRUD local + cifrado)
 - `expo-sqlite` para cache. Store Zustand de bóvedas/items.

@@ -33,6 +33,17 @@ export interface Argon2Params {
  */
 export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 3, m: 64 * 1024, p: 4, dkLen: 32 };
 
+/**
+ * Parámetros Argon2id activos. Por defecto los de producción; se pueden ajustar
+ * con `configureArgon2Params` para afinar por dispositivo o acelerar los tests.
+ */
+let activeArgon2Params: Argon2Params = DEFAULT_ARGON2_PARAMS;
+
+/** Sobreescribe los parámetros Argon2id usados por `deriveMasterKey` por defecto. */
+export function configureArgon2Params(params: Argon2Params): void {
+  activeArgon2Params = params;
+}
+
 export const SALT_LENGTH = 16;
 
 /** Genera un salt aleatorio por usuario (se guarda junto al perfil). */
@@ -47,7 +58,7 @@ export function generateSalt(length: number = SALT_LENGTH): Uint8Array {
 export function deriveMasterKey(
   password: string,
   salt: Uint8Array,
-  params: Argon2Params = DEFAULT_ARGON2_PARAMS,
+  params: Argon2Params = activeArgon2Params,
 ): Uint8Array {
   return argon2id(passwordToBytes(password), salt, {
     t: params.t,
