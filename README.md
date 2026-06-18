@@ -16,13 +16,15 @@ cifrado **cero-conocimiento**: solo vos podés leer tus datos, ni siquiera el se
 Nace para reemplazar el clásico Excel de contraseñas por algo seguro y cómodo.
 
 ### Características (MVP)
-- 🔐 **Cifrado cero-conocimiento** (Argon2id + AES-256-GCM).
+- 🔐 **Cifrado cero-conocimiento** (Argon2id + AES-256-GCM): el servidor solo ve texto cifrado.
 - 🗂️ **Bóvedas** para separar contextos (Personal, Familia, Trabajo, Proyectos…).
 - ☁️ **Sincronización** entre dispositivos con Supabase (solo se suben datos cifrados).
-- 👆 **Desbloqueo biométrico** (Face ID / huella).
-- 🎲 **Generador** de contraseñas fuertes.
-- 📥 **Importar** desde Excel (CSV).
-- 🔎 **Búsqueda y categorías**, con **logos de marca a color**.
+- 👆 **Desbloqueo biométrico** (Face ID / huella), con auto-bloqueo por inactividad.
+- 🎲 **Generador** de contraseñas fuertes (entropía configurable).
+- 🔎 **Búsqueda global** y **logos de marca** en cada entrada.
+- 🛡️ **Bloqueo de capturas** de pantalla en datos sensibles.
+
+> Roadmap: importar desde Excel (CSV) y tema claro están planificados.
 
 ## Stack
 Expo + React Native (TypeScript) · Supabase (Postgres + Auth + RLS) · cripto en JS puro
