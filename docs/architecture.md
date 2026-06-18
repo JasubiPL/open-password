@@ -107,9 +107,7 @@ open-password/
 │   ├── db/                   # sqlite.ts, models.ts, sync.ts
 │   ├── lib/supabase.ts
 │   ├── store/                # zustand: session, vaults
-│   ├── icons/brand.ts        # mapeo dominio/nombre → logo a color (colección "Logos")
-│   └── components/
-├── assets/brand-logos/       # SVGs full-color de empresas (Google, Microsoft, FB…)
+│   └── components/           # UI reutilizable (incl. PlatformIcon: logo de marca en tile blanco)
 ├── assets/branding/          # generados (ya en el repo, de docs/design/brand/)
 │   ├── icon.png                  # 1024² OPACO: escudo sobre fondo #0E1116 (iOS/legacy)
 │   ├── adaptive-icon.png         # 1024² transparente: escudo en zona segura (foreground Android)
@@ -298,23 +296,7 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **Branding / atribución ✅**: `BrandSignature` (*JasubiP® 2015–2026*) en Login, Desbloqueo y pie
   de Ajustes; pantalla **Acerca de** (`(app)/about.tsx`) con imagotipo horizontal, versión/cifrado/
   licencia, link al repo y leyenda completa de autoría.
-- **Diferido a pedido del usuario:** import CSV (cargará entradas a mano por ahora).
-- **Logos de marca a color** (`src/icons/brand.ts`): bundlear SVGs full-color (colección
-  "Logos") en `assets/brand-logos/`, mapear por dominio/nombre y renderizar con
-  `react-native-svg` (vía `react-native-svg-transformer`); fallback a avatar inicial + color.
-- **Import CSV** (`import.tsx`): elegir archivo, parsear con `papaparse`, mapear columnas
-  (sitio/usuario/contraseña/notas), previsualizar y asignar a una bóveda. Guía para
-  exportar el Excel a CSV.
-- **Marca / atribución JasubiP** (ver `docs/design/screens.md` → "Marca y atribución"):
-  - Copiar los imagotipos de `docs/design/brand/` a `assets/branding/`. Son versiones **en
-    blanco** → usar sobre fondo oscuro/acento (pendiente exportar variante para fondos
-    claros).
-  - **Splash:** imagotipo **vertical** + leyenda corta *"JasubiP® 2015–2026"*.
-  - **Acerca de** (`settings/about.tsx`): imagotipo **horizontal** + bloque de autoría +
-    leyenda completa *"JasubiP® — Marca registrada 2015–2026. Todos los derechos
-    reservados."* + link al repo + licencia MIT.
-  - Firma discreta *"JasubiP® 2015–2026"* en Login, Desbloqueo y pie de Ajustes. Componente
-    reutilizable `BrandSignature`.
+- **Diferido a pedido del usuario:** import CSV (carga manual por ahora).
 
 ### Fase 6 — Pulido ✅ (hecho)
 - **Auto-bloqueo ✅** (`SecurityGuards` + `store/preferences.ts`): al volver del segundo plano,
@@ -325,6 +307,22 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **README final ✅**.
 - **Tema:** la app es **dark-only por decisión de diseño** (todo el handoff es oscuro); no hay
   modo claro y no se considera deuda. Capturas para el repo quedan como tarea manual.
+
+---
+
+## Build de producción (EAS) y Argon2 nativo
+
+- **EAS Build** (`eas.json`): perfiles `development` (dev client), `preview` (APK interno) y
+  `production` (AAB / store). `app.json` con bundle ids `com.jasubip.openpassword`,
+  `userInterfaceStyle: dark`, `runtimeVersion` por `appVersion`. Flujo:
+  `eas init` → `eas build --profile <perfil>`.
+- **Argon2id nativo (resuelto, ver [ADR 0005](adr/0005-argon2-nativo.md)):** el coste alto de
+  Argon2 en JS sobre Hermes obligó a bajar los params por defecto. Para recuperar nivel OWASP
+  sin penalizar la UX, `kdf.ts` expone `registerNativeArgon2(fn)`: un Argon2id nativo que se
+  **valida contra `@noble`** (self-test, `nativeIsTrustworthy`) antes de usarse y cae a JS si no
+  coincide — **cero riesgo de lockout**. Con el nativo validado en dispositivo se puede subir
+  `DEFAULT_ARGON2_PARAMS` a `STRONG_ARGON2_PARAMS` (~64 MiB/3) para cuentas nuevas (los params
+  por usuario hacen el cambio seguro). Activarlo saca el dev del flujo de Expo Go → dev client.
 
 ---
 

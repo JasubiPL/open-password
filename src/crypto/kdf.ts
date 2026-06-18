@@ -51,6 +51,15 @@ export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 1, m: 2048, p: 1, dkLen:
 export const LEGACY_ARGON2_PARAMS: Argon2Params = { t: 2, m: 8192, p: 1, dkLen: 32 };
 
 /**
+ * Params recomendados para builds con **Argon2id nativo** (`registerNativeArgon2`),
+ * donde el coste no penaliza la UX: ~64 MiB / 3 pasadas (por encima del mínimo
+ * OWASP de ~19 MiB). Como los params se guardan por usuario, se puede cambiar
+ * `DEFAULT_ARGON2_PARAMS` a estos para cuentas NUEVAS sin romper las existentes.
+ * Ver ADR 0005.
+ */
+export const STRONG_ARGON2_PARAMS: Argon2Params = { t: 3, m: 65536, p: 1, dkLen: 32 };
+
+/**
  * Valida y normaliza unos params Argon2 venidos del servidor (jsonb). Si faltan
  * o son inválidos (cuenta legacy), devuelve `LEGACY_ARGON2_PARAMS`.
  */
@@ -109,22 +118,78 @@ export function deriveMasterKey(
   });
 }
 
+// --- Argon2id nativo (opcional, para dev/prod builds) ----------------------
+//
+// En Expo Go solo corre el Argon2id en JS puro (lento en Hermes). En un build
+// nativo se puede registrar un Argon2id nativo (rápido) con `registerNativeArgon2`.
+// CLAVE: Argon2id es un estándar, así que un módulo nativo correcto produce los
+// MISMOS bytes que `@noble` para los mismos parámetros e inputs. Antes de usar el
+// nativo lo VALIDAMOS contra `@noble` con un vector de prueba (`nativeIsTrustworthy`);
+// si no coincide (p. ej. el módulo codifica el salt distinto), caemos a JS. Así
+// nunca se puede bloquear a un usuario por un nativo incompatible. Ver ADR 0005.
+
+/** Firma de un Argon2id nativo: recibe bytes y devuelve la clave derivada. */
+export type NativeArgon2 = (
+  password: Uint8Array,
+  salt: Uint8Array,
+  params: Argon2Params,
+) => Promise<Uint8Array>;
+
+let nativeArgon2: NativeArgon2 | null = null;
+let nativeVerified: boolean | null = null; // null = sin probar todavía
+
+/** Registra (o limpia con `null`) un Argon2id nativo. Se valida antes de usarse. */
+export function registerNativeArgon2(fn: NativeArgon2 | null): void {
+  nativeArgon2 = fn;
+  nativeVerified = null;
+}
+
+const SELF_TEST_PARAMS: Argon2Params = { t: 1, m: 256, p: 1, dkLen: 32 };
+const SELF_TEST_PASSWORD = passwordToBytes('open-password::argon2-selftest');
+const SELF_TEST_SALT = Uint8Array.from(
+  [11, 22, 33, 44, 55, 66, 77, 88, 99, 110, 121, 132, 143, 154, 165, 176].map((n) => n & 0xff),
+);
+
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+/** True si el nativo produce el MISMO resultado que `@noble` en un vector de prueba. */
+async function nativeIsTrustworthy(): Promise<boolean> {
+  if (nativeVerified !== null) return nativeVerified;
+  if (!nativeArgon2) return (nativeVerified = false);
+  try {
+    const reference = argon2id(SELF_TEST_PASSWORD, SELF_TEST_SALT, { ...SELF_TEST_PARAMS });
+    const got = await nativeArgon2(SELF_TEST_PASSWORD, SELF_TEST_SALT, SELF_TEST_PARAMS);
+    nativeVerified = bytesEqual(reference, got);
+  } catch {
+    nativeVerified = false;
+  }
+  return nativeVerified;
+}
+
 /**
- * Versión asíncrona de `deriveMasterKey`. Cede el hilo de JS periódicamente
- * para no congelar la UI mientras Argon2id corre. Usar siempre desde la app;
- * la versión síncrona se reserva para tests/uso fuera de la UI.
+ * Versión asíncrona de `deriveMasterKey`. Usa el Argon2id nativo si está
+ * registrado y validado; si no, el JS puro de `@noble` (que cede el hilo
+ * periódicamente para no congelar la UI). Usar siempre desde la app.
  */
-export function deriveMasterKeyAsync(
+export async function deriveMasterKeyAsync(
   password: string,
   salt: Uint8Array,
   params: Argon2Params = activeArgon2Params,
 ): Promise<Uint8Array> {
-  return argon2idAsync(passwordToBytes(password), salt, {
-    t: params.t,
-    m: params.m,
-    p: params.p,
-    dkLen: params.dkLen,
-  });
+  const pw = passwordToBytes(password);
+  if (await nativeIsTrustworthy()) {
+    try {
+      return await nativeArgon2!(pw, salt, params);
+    } catch {
+      /* el nativo falló en runtime: caemos a JS */
+    }
+  }
+  return argon2idAsync(pw, salt, { t: params.t, m: params.m, p: params.p, dkLen: params.dkLen });
 }
 
 /**

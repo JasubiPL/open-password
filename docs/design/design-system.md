@@ -1,4 +1,10 @@
-# Handoff: Open Password — App móvil gestor de contraseñas (dirección "Vault")
+# Sistema de diseño — Open Password (dirección "Vault")
+
+> Referencia del diseño original (tokens de color, tipografía, espaciado, especificación de
+> pantallas). La app **ya está implementada** siguiendo esta dirección. Notas de implementación:
+> la paleta vive en `src/constants/theme.ts`; los logos de marca usan `@expo/vector-icons` sobre
+> tile blanco (en vez de `simple-icons`/SVG); fuentes del sistema. La app es **dark-only** por
+> decisión de producto.
 
 ## Overview
 Open Password es un gestor de contraseñas mobile (iOS + Android) con bóvedas, cifrado
@@ -218,9 +224,8 @@ auto-borrado 30s), `EmptyState`, `BiometricButton`, `ConfirmDialog`, `Toggle`, `
 - **Fuentes:** Space Grotesk, Manrope, JetBrains Mono (Google Fonts / empaquetar en la app).
 - No hay imágenes raster propias; logo de marca pendiente de definir (placeholder candado).
 
-## Files (en este bundle)
-- `screens.md` — especificación funcional completa (16 pantallas, estados, componentes).
-- `Propuestas UI.dc.html` — Bóvedas (home) + Detalle de entrada en la dirección Vault (col. 1).
-- `Vault — 4 pantallas.dc.html` — Desbloqueo, Detalle de bóveda, Generador, Ajustes.
-
-Para ver los prototipos: abrir los `.dc.html` en un navegador moderno.
+## Documentos relacionados
+- [`screens.md`](screens.md) — especificación funcional completa (16 pantallas, estados, componentes).
+- [`../architecture.md`](../architecture.md) — diseño técnico y plan por fases.
+- Implementación: pantallas en `src/app/`, componentes en `src/components/`, tema en
+  `src/constants/theme.ts`.

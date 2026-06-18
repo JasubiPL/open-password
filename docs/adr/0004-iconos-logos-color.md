@@ -24,3 +24,11 @@ Native**.
   (coherente con cero-conocimiento; evita APIs externas de favicons).
 - ⚠️ Hay que mantener el set de logos bundleados (agregar marcas nuevas a demanda).
 - ℹ️ `simple-icons` (monocromo) se descartó para los logos por no ser a color.
+
+## Actualización (Fase 5)
+La implementación inicial usa **glifos de marca de FontAwesome6** (`@expo/vector-icons`)
+renderizados sobre **tile blanco** en el color de la marca (`PlatformIcon`), con tinta oscura
+para marcas casi blancas (GitHub/Apple) y fallback a inicial + color. Es coherente con el
+diseño (logos sobre cuadro blanco) y no requiere bundlear SVGs ni deps extra. Los **logos
+full-color en SVG** (colección "Logos" / `react-native-svg`) quedan como mejora futura cuando
+se agreguen los assets; por eso se eliminaron `src/icons/` y `assets/brand-logos/` (vacíos).
