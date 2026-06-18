@@ -76,11 +76,19 @@ export async function syncBiometricEnrollment(): Promise<void> {
 }
 
 /**
- * Pide biometría (vía el keychain, que exige autenticación) y carga la Vault Key
- * en RAM. Devuelve `true` si desbloqueó, `false` si no había clave guardada.
- * Lanza si el usuario cancela o la autenticación falla (lo maneja la pantalla).
+ * Pide biometría con un prompt explícito y, si pasa, carga la Vault Key en RAM.
+ * Devuelve `true` si desbloqueó, `false` si el usuario canceló o no había clave
+ * guardada. La clave se guarda sin `requireAuthentication` (ver `keyManager`),
+ * así que este `authenticateAsync` ES la barrera biométrica.
  */
 export async function unlockWithBiometrics(): Promise<boolean> {
+  const result = await LocalAuthentication.authenticateAsync({
+    promptMessage: 'Desbloqueá tu bóveda',
+    cancelLabel: 'Usar contraseña',
+    disableDeviceFallback: false,
+  });
+  if (!result.success) return false;
+
   const vaultKey = await loadVaultKeyFromSecureStore();
   if (!vaultKey) return false;
 

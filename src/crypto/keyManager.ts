@@ -66,11 +66,18 @@ export function clearVaultKey(): void {
 
 /**
  * Guarda la Vault Key en el almacén seguro del dispositivo para desbloqueo
- * biométrico. Requiere autenticación del usuario para leerla.
+ * biométrico.
+ *
+ * NO usamos `requireAuthentication`: con esa opción el SO pide biometría también
+ * al ESCRIBIR, lo que dispara un prompt inesperado durante el enrolamiento (justo
+ * tras el login). En su lugar, el acceso se controla con un `authenticateAsync`
+ * explícito al desbloquear (ver `unlockWithBiometrics`). La clave queda igual
+ * protegida en reposo con `WHEN_UNLOCKED_THIS_DEVICE_ONLY` (Keychain/Keystore,
+ * solo este dispositivo, solo con el equipo desbloqueado). Trade-off de
+ * conveniencia aceptado para el MVP; ver ADR 0002.
  */
 export async function saveVaultKeyToSecureStore(vaultKey: Uint8Array): Promise<void> {
   await SecureStore.setItemAsync(SECURE_STORE_KEY, bytesToBase64(vaultKey), {
-    requireAuthentication: true,
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
 }
@@ -78,7 +85,6 @@ export async function saveVaultKeyToSecureStore(vaultKey: Uint8Array): Promise<v
 /** Recupera la Vault Key del almacén seguro, o `null` si no existe. */
 export async function loadVaultKeyFromSecureStore(): Promise<Uint8Array | null> {
   const stored = await SecureStore.getItemAsync(SECURE_STORE_KEY, {
-    requireAuthentication: true,
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
   return stored ? base64ToBytes(stored) : null;
