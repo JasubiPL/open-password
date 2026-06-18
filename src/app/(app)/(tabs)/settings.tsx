@@ -1,13 +1,34 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandSignature } from '@/components/BrandSignature';
 import { Colors } from '@/constants/theme';
 import { getVaultKey } from '@/crypto';
 import { useSession } from '@/store/session';
+import { useVaults } from '@/store/vaults';
 import { AUTO_LOCK_OPTIONS, usePreferences } from '@/store/preferences';
+
+/** "hace 3 min", "hace 2 h"… para el estado de sync. */
+function timeAgo(ts: number): string {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'recién';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.floor(h / 24)} d`;
+}
 import {
   disableBiometricUnlock,
   enableBiometricUnlock,
@@ -27,6 +48,19 @@ export default function Settings() {
   const setAutoLockMinutes = usePreferences((s) => s.setAutoLockMinutes);
   const blockScreenshots = usePreferences((s) => s.blockScreenshots);
   const setBlockScreenshots = usePreferences((s) => s.setBlockScreenshots);
+
+  const syncing = useVaults((s) => s.syncing);
+  const lastSyncedAt = useVaults((s) => s.lastSyncedAt);
+  const lastSyncOk = useVaults((s) => s.lastSyncOk);
+  const sync = useVaults((s) => s.sync);
+
+  const syncStatus = syncing
+    ? 'Sincronizando…'
+    : lastSyncOk === false
+      ? 'Sin conexión'
+      : lastSyncedAt
+        ? timeAgo(lastSyncedAt)
+        : 'Tocá para sincronizar';
 
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioEnabled, setBioEnabled] = useState(false);
@@ -86,10 +120,33 @@ export default function Settings() {
               {email}
             </Text>
           </View>
-          <View style={styles.syncRow}>
-            <View style={styles.syncDot} />
-            <Text style={styles.syncText}>Sync</Text>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Sincronizar"
+            onPress={() => void sync()}
+            disabled={syncing}
+            style={styles.syncRow}
+          >
+            {syncing ? (
+              <ActivityIndicator size="small" color={Colors.accent} />
+            ) : (
+              <>
+                <View style={[styles.syncDot, lastSyncOk === false && styles.syncDotOff]} />
+                <Text style={styles.syncText}>Sync</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+
+        <Text style={styles.section}>SINCRONIZACIÓN</Text>
+        <View style={styles.card}>
+          <Row icon="sync-outline" label="Sincronizar ahora" onPress={() => void sync()}>
+            {syncing ? (
+              <ActivityIndicator size="small" color={Colors.accent} />
+            ) : (
+              <Text style={[styles.value, lastSyncOk === false && styles.valueWarn]}>{syncStatus}</Text>
+            )}
+          </Row>
         </View>
 
         <Text style={styles.section}>SEGURIDAD</Text>
@@ -193,6 +250,7 @@ const styles = StyleSheet.create({
   accountEmail: { color: Colors.textMuted, fontSize: 13 },
   syncRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   syncDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
+  syncDotOff: { backgroundColor: Colors.warning },
   syncText: { color: Colors.success, fontSize: 14, fontWeight: '600' },
   section: { color: Colors.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 1, marginTop: 8, marginLeft: 4 },
   card: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: 16, paddingHorizontal: 16 },
@@ -202,6 +260,7 @@ const styles = StyleSheet.create({
   rowLabel: { flex: 1, color: Colors.text, fontSize: 16 },
   rowRight: { flexDirection: 'row', alignItems: 'center' },
   value: { color: Colors.textMuted, fontSize: 15 },
+  valueWarn: { color: Colors.warning, fontSize: 15 },
   pressed: { opacity: 0.6 },
   logoutBtn: {
     marginTop: 8,

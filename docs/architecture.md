@@ -261,8 +261,12 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   limpias) + **pull** incremental por `updated_at > cursor` con **last-writer-wins** por fila
   (la remota gana solo si es estrictamente más nueva) y propagación de soft-deletes. No-op sin
   sesión (offline-first). Conflicto a nivel de fila (el registro es un blob opaco).
-- **Wiring**: `useVaults.sync()` (push+pull, recarga solo si el pull trajo cambios) se llama al
-  desbloquear tras el `load` local; cada mutación dispara un push en segundo plano.
+- **Wiring / disparadores**: `useVaults.sync()` (push+pull, recarga solo si el pull trajo
+  cambios; expone `syncing`/`lastSyncedAt`/`lastSyncOk`) corre: (a) al desbloquear tras el `load`
+  local, (b) al **volver a foreground** estando desbloqueada (`SecurityGuards`), (c) **manual**
+  desde Ajustes → "Sincronizar ahora", y (d) un push best-effort tras cada mutación. Offline-first:
+  todo se guarda local (cifrado) marcado `dirty` y se sube al reconectar. (Nota: el **primer login
+  en un dispositivo** sí requiere red; los desbloqueos posteriores son offline.)
 - **Tests** (Jest): `sync.test.ts` (6) con SQLite + Supabase en memoria cubre push, pull, LWW
   (ambos sentidos), soft-delete y sin-sesión.
 - Trade-off: `updated_at` es reloj del cliente (posible skew entre dispositivos, aceptado para

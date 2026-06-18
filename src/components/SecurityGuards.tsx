@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useSession } from '@/store/session';
+import { useVaults } from '@/store/vaults';
 import { usePreferences } from '@/store/preferences';
 
 /**
@@ -31,7 +32,13 @@ export function SecurityGuards() {
       if (next === 'active' && backgroundedAt.current != null) {
         const elapsedMin = (Date.now() - backgroundedAt.current) / 60000;
         backgroundedAt.current = null;
-        if (session.unlocked && elapsedMin >= autoLockMinutes) session.lock();
+        if (session.unlocked && elapsedMin >= autoLockMinutes) {
+          session.lock();
+        } else if (useSession.getState().unlocked) {
+          // Sigue desbloqueada al volver: intentamos sincronizar (sube pendientes
+          // y baja cambios remotos) ahora que probablemente hay conexión.
+          void useVaults.getState().sync();
+        }
       }
     };
 
