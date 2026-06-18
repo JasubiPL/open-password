@@ -15,7 +15,7 @@ import { supabase } from './supabase';
 import {
   bytesToBase64,
   deriveAuthHash,
-  deriveMasterKey,
+  deriveMasterKeyAsync,
   generateSalt,
   generateVaultKey,
   protectVaultKey,
@@ -45,7 +45,7 @@ function normalizeEmail(email: string): string {
 export async function register(email: string, masterPassword: string): Promise<void> {
   const normalizedEmail = normalizeEmail(email);
   const salt = generateSalt();
-  const masterKey = deriveMasterKey(masterPassword, salt);
+  const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
   const vaultKey = generateVaultKey();
   const protectedVaultKey = protectVaultKey(vaultKey, masterKey);
 
@@ -88,7 +88,7 @@ export async function login(email: string, masterPassword: string): Promise<void
     throw new Error('No existe una cuenta con ese email.');
   }
   const salt = base64ToBytes(saltB64);
-  const masterKey = deriveMasterKey(masterPassword, salt);
+  const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
 
   const { error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
@@ -108,7 +108,7 @@ export async function login(email: string, masterPassword: string): Promise<void
 export async function unlock(masterPassword: string): Promise<void> {
   const profile = await fetchProfile();
   const salt = base64ToBytes(profile.salt);
-  const masterKey = deriveMasterKey(masterPassword, salt);
+  const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
   // unprotect lanza si la contraseña es incorrecta (fallo de autenticación GCM).
   const vaultKey = unprotectVaultKey(profile.protected_vault_key, masterKey);
   setVaultKey(vaultKey);

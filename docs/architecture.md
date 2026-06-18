@@ -172,7 +172,8 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   bundle (~5MB) por defecto.
 
 ### Fase 1 — Núcleo de cripto (`src/crypto/`) ✅ (hecho)
-- `kdf.ts`: `deriveMasterKey` (Argon2id, ~64 MiB/3 pasadas) y `deriveAuthHash` (PBKDF2) +
+- `kdf.ts`: `deriveMasterKey`/`deriveMasterKeyAsync` (Argon2id, mínimo OWASP ~19 MiB/2
+  pasadas; la versión async evita congelar la UI) y `deriveAuthHash` (PBKDF2) +
   `generateSalt`.
 - `cipher.ts`: `encrypt`/`decrypt` de bytes y string con AES-256-GCM (+ IV aleatorio de
   12 bytes y AAD opcional); formato serializado `base64(iv || ciphertext+tag)`.

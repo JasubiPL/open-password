@@ -10,7 +10,7 @@
  *
  * Estilo Bitwarden: authHash = PBKDF2(masterKey, password) con dominio separado.
  */
-import { argon2id } from '@noble/hashes/argon2.js';
+import { argon2id, argon2idAsync } from '@noble/hashes/argon2.js';
 import { pbkdf2 } from '@noble/hashes/pbkdf2.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { passwordToBytes } from './encoding';
@@ -28,10 +28,12 @@ export interface Argon2Params {
 }
 
 /**
- * Parámetros Argon2id por defecto. ~64 MiB / 3 pasadas: balance razonable para
- * dispositivos móviles dado que solo corre al desbloquear (ADR 0002).
+ * Parámetros Argon2id por defecto: mínimo recomendado por OWASP
+ * (~19 MiB / 2 pasadas / 1 lane). Elegidos para ser usables en JS puro sobre
+ * móvil (ADR 0002): Argon2id de 64 MiB en JS bloquea el dispositivo varios
+ * segundos. Solo corre al registrarse/desbloquear.
  */
-export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 3, m: 64 * 1024, p: 4, dkLen: 32 };
+export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 2, m: 19456, p: 1, dkLen: 32 };
 
 /**
  * Parámetros Argon2id activos. Por defecto los de producción; se pueden ajustar
@@ -61,6 +63,24 @@ export function deriveMasterKey(
   params: Argon2Params = activeArgon2Params,
 ): Uint8Array {
   return argon2id(passwordToBytes(password), salt, {
+    t: params.t,
+    m: params.m,
+    p: params.p,
+    dkLen: params.dkLen,
+  });
+}
+
+/**
+ * Versión asíncrona de `deriveMasterKey`. Cede el hilo de JS periódicamente
+ * para no congelar la UI mientras Argon2id corre. Usar siempre desde la app;
+ * la versión síncrona se reserva para tests/uso fuera de la UI.
+ */
+export function deriveMasterKeyAsync(
+  password: string,
+  salt: Uint8Array,
+  params: Argon2Params = activeArgon2Params,
+): Promise<Uint8Array> {
+  return argon2idAsync(passwordToBytes(password), salt, {
     t: params.t,
     m: params.m,
     p: params.p,
