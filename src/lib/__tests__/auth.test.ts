@@ -15,9 +15,16 @@ beforeAll(() => configureArgon2Params({ t: 2, m: 256, p: 1, dkLen: 32 }));
 jest.mock('../supabase', () => {
   const users = new Map<
     string,
-    { id: string; password: string; metadata: { salt?: string; protected_vault_key?: string } }
+    {
+      id: string;
+      password: string;
+      metadata: { salt?: string; protected_vault_key?: string; kdf_params?: unknown };
+    }
   >();
-  const profiles = new Map<string, { salt: string; protected_vault_key: string }>();
+  const profiles = new Map<
+    string,
+    { salt: string; protected_vault_key: string; kdf_params?: unknown }
+  >();
   let current: string | null = null;
   let seq = 0;
   let requireEmailConfirmation = false;
@@ -40,7 +47,7 @@ jest.mock('../supabase', () => {
       }: {
         email: string;
         password: string;
-        options?: { data?: { salt?: string; protected_vault_key?: string } };
+        options?: { data?: { salt?: string; protected_vault_key?: string; kdf_params?: unknown } };
       }) => {
         if (userByEmail(email)) {
           return { data: { user: null, session: null }, error: { message: 'already registered' } };
@@ -78,25 +85,38 @@ jest.mock('../supabase', () => {
       },
     },
     rpc: async (fn: string, args: { p_email: string }) => {
-      if (fn === 'get_salt_by_email') {
+      if (fn === 'get_prelogin_by_email') {
         const u = userByEmail(args.p_email);
-        if (!u) return { data: null, error: null };
-        // Fallback a metadata como la migración 0002 (profiles primero).
-        const salt = profiles.get(u.id)?.salt ?? u.metadata.salt ?? null;
-        return { data: salt, error: null };
+        if (!u) return { data: { salt: null, params: null }, error: null };
+        // Fallback a metadata como la migración 0002/0004 (profiles primero).
+        const profile = profiles.get(u.id);
+        const salt = profile?.salt ?? u.metadata.salt ?? null;
+        const params = profile?.kdf_params ?? u.metadata.kdf_params ?? null;
+        return { data: { salt, params }, error: null };
       }
       return { data: null, error: null };
     },
     from: (table: string) => {
-      const writeProfile = (row: { user_id: string; salt: string; protected_vault_key: string }) => {
+      const writeProfile = (row: {
+        user_id: string;
+        salt: string;
+        protected_vault_key: string;
+        kdf_params?: unknown;
+      }) => {
         if (table === 'profiles') {
-          profiles.set(row.user_id, { salt: row.salt, protected_vault_key: row.protected_vault_key });
+          profiles.set(row.user_id, {
+            salt: row.salt,
+            protected_vault_key: row.protected_vault_key,
+            kdf_params: row.kdf_params,
+          });
         }
         return { error: null };
       };
       return {
-        insert: async (row: { user_id: string; salt: string; protected_vault_key: string }) => writeProfile(row),
-        upsert: async (row: { user_id: string; salt: string; protected_vault_key: string }) => writeProfile(row),
+        insert: async (row: { user_id: string; salt: string; protected_vault_key: string; kdf_params?: unknown }) =>
+          writeProfile(row),
+        upsert: async (row: { user_id: string; salt: string; protected_vault_key: string; kdf_params?: unknown }) =>
+          writeProfile(row),
         select: () => ({
           single: async () => {
             if (table === 'profiles' && current && profiles.has(current)) {

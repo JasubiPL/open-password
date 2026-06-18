@@ -23,6 +23,9 @@ import {
   unprotectVaultKey,
   base64ToBytes,
   clearVaultKey,
+  getActiveArgon2Params,
+  normalizeArgon2Params,
+  type Argon2Params,
 } from '@/crypto';
 
 const PROFILES_TABLE = 'profiles';
@@ -30,6 +33,7 @@ const PROFILES_TABLE = 'profiles';
 interface ProfileRow {
   salt: string;
   protected_vault_key: string;
+  kdf_params?: Argon2Params | null;
 }
 
 /** Codifica el auth hash como string para usarlo como password en Supabase. */
@@ -84,16 +88,17 @@ export async function register(email: string, masterPassword: string): Promise<R
   const normalizedEmail = normalizeEmail(email);
   const salt = generateSalt();
   const saltB64 = bytesToBase64(salt);
+  const params = getActiveArgon2Params(); // las cuentas nuevas usan los params ligeros activos
   await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
-  const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
+  const masterKey = await deriveMasterKeyAsync(masterPassword, salt, params);
   const vaultKey = generateVaultKey();
   const protectedVaultKey = protectVaultKey(vaultKey, masterKey);
 
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password: authHashToPassword(masterKey, masterPassword),
-    // user_metadata: salt (no secreto) + Vault Key cifrada (segura aunque se exponga).
-    options: { data: { salt: saltB64, protected_vault_key: protectedVaultKey } },
+    // user_metadata: salt + params (no secretos) + Vault Key cifrada (segura aunque se exponga).
+    options: { data: { salt: saltB64, protected_vault_key: protectedVaultKey, kdf_params: params } },
   });
   if (error) throw mapAuthError(error);
 
@@ -103,7 +108,7 @@ export async function register(email: string, masterPassword: string): Promise<R
     return 'emailConfirmationRequired';
   }
 
-  await upsertProfile(data.user.id, saltB64, protectedVaultKey);
+  await upsertProfile(data.user.id, saltB64, protectedVaultKey, params);
   setVaultKey(vaultKey);
   return 'unlocked';
 }
@@ -114,25 +119,36 @@ export async function resendConfirmationEmail(email: string): Promise<void> {
   if (error) throw mapAuthError(error);
 }
 
-/** Devuelve el salt (base64) de un email vía RPC prelogin, o null si no existe. */
-export async function prelogin(email: string): Promise<string | null> {
-  const { data, error } = await supabase.rpc('get_salt_by_email', {
+/**
+ * Datos de prelogin: salt + params Argon2 (necesarios para derivar la Master Key
+ * ANTES de autenticar). Se exponen por email vía RPC (no son secretos).
+ */
+export interface PreloginData {
+  salt: string;
+  params: Argon2Params;
+}
+
+/** Devuelve salt + params de un email vía RPC prelogin, o null si no existe. */
+export async function prelogin(email: string): Promise<PreloginData | null> {
+  const { data, error } = await supabase.rpc('get_prelogin_by_email', {
     p_email: normalizeEmail(email),
   });
   if (error) throw error;
-  return (data as string | null) ?? null;
+  const row = data as { salt?: string | null; params?: unknown } | null;
+  if (!row?.salt) return null;
+  return { salt: row.salt, params: normalizeArgon2Params(row.params) };
 }
 
 /** Inicia sesión en un dispositivo nuevo y desbloquea la bóveda. */
 export async function login(email: string, masterPassword: string): Promise<void> {
   const normalizedEmail = normalizeEmail(email);
-  const saltB64 = await prelogin(normalizedEmail);
-  if (!saltB64) {
+  const pre = await prelogin(normalizedEmail);
+  if (!pre) {
     throw new Error('No existe una cuenta con ese email.');
   }
-  const salt = base64ToBytes(saltB64);
+  const salt = base64ToBytes(pre.salt);
   await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
-  const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
+  const masterKey = await deriveMasterKeyAsync(masterPassword, salt, pre.params);
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
@@ -150,7 +166,12 @@ export async function login(email: string, masterPassword: string): Promise<void
   // Aseguramos la fila en `profiles` en segundo plano (no bloquea el desbloqueo).
   // Necesaria para cuentas creadas con confirmación de email y para el sync (Fase 4).
   if (data.user?.id && meta.protected_vault_key) {
-    void upsertProfile(data.user.id, meta.salt ?? saltB64, meta.protected_vault_key).catch(() => {});
+    void upsertProfile(
+      data.user.id,
+      meta.salt ?? pre.salt,
+      meta.protected_vault_key,
+      meta.kdf_params ?? pre.params,
+    ).catch(() => {});
   }
 }
 
@@ -166,16 +187,18 @@ export async function unlock(masterPassword: string): Promise<void> {
 
   let saltB64 = meta.salt;
   let protectedVaultKey = meta.protected_vault_key;
+  let rawParams: unknown = meta.kdf_params;
   if (!saltB64 || !protectedVaultKey) {
     // Fallback (cuentas antiguas sin metadata): leer de `profiles`.
     const profile = await fetchProfile();
     saltB64 = profile.salt;
     protectedVaultKey = profile.protected_vault_key;
+    rawParams = profile.kdf_params;
   }
 
   const salt = base64ToBytes(saltB64);
   await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
-  const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
+  const masterKey = await deriveMasterKeyAsync(masterPassword, salt, normalizeArgon2Params(rawParams));
   // unprotect lanza si la contraseña es incorrecta (fallo de autenticación GCM).
   const vaultKey = unprotectVaultKey(protectedVaultKey, masterKey);
   setVaultKey(vaultKey);
@@ -191,7 +214,7 @@ export async function logout(): Promise<void> {
 async function fetchProfileOrNull(): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from(PROFILES_TABLE)
-    .select('salt, protected_vault_key')
+    .select('salt, protected_vault_key, kdf_params')
     .maybeSingle();
   if (error) throw error;
   return (data as ProfileRow | null) ?? null;
@@ -205,11 +228,16 @@ async function fetchProfile(): Promise<ProfileRow> {
 }
 
 /** Crea o actualiza el perfil cifrado del usuario. */
-async function upsertProfile(userId: string, saltB64: string, protectedVaultKey: string): Promise<void> {
+async function upsertProfile(
+  userId: string,
+  saltB64: string,
+  protectedVaultKey: string,
+  params: Argon2Params,
+): Promise<void> {
   const { error } = await supabase
     .from(PROFILES_TABLE)
     .upsert(
-      { user_id: userId, salt: saltB64, protected_vault_key: protectedVaultKey },
+      { user_id: userId, salt: saltB64, protected_vault_key: protectedVaultKey, kdf_params: params },
       { onConflict: 'user_id' },
     );
   if (error) throw error;
@@ -217,5 +245,5 @@ async function upsertProfile(userId: string, saltB64: string, protectedVaultKey:
 
 interface AuthUser {
   id: string;
-  user_metadata?: { salt?: string; protected_vault_key?: string };
+  user_metadata?: { salt?: string; protected_vault_key?: string; kdf_params?: Argon2Params };
 }
