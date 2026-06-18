@@ -286,8 +286,12 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **UI alineada al handoff** (`docs/design/handoff/references/`): tema menta oscuro, grid de
   bóvedas 2-col, FAB, monoespaciada para contraseñas.
 - **Iconos de UI ✅**: `@expo/vector-icons` en toda la app (no `react-icons`).
-- **Pendiente en Fase 5:** pulido visual de detalle de bóveda (chips de categoría) y de entrada
-  (tarjetas + barra de fuerza), logos de marca a color (SVG), import CSV real, branding/atribución.
+- **Detalle de bóveda ✅** (`(app)/vault.tsx`): header con icono + nombre + conteo, chips de
+  categoría, filas con logo + copia rápida de contraseña, menú kebab (editar/eliminar) — ref_4.
+- **Detalle de entrada ✅** (`(app)/item.tsx`): icono grande, tarjetas USUARIO/CONTRASEÑA con
+  mostrar/ocultar y copiar (feedback inline), barra de fuerza, notas, meta "modificado hace…",
+  botones Editar + eliminar — ref_2.
+- **Pendiente en Fase 5:** logos de marca a color (SVG), import CSV real, branding/atribución.
 - **Logos de marca a color** (`src/icons/brand.ts`): bundlear SVGs full-color (colección
   "Logos") en `assets/brand-logos/`, mapear por dominio/nombre y renderizar con
   `react-native-svg` (vía `react-native-svg-transformer`); fallback a avatar inicial + color.
