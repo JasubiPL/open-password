@@ -24,7 +24,11 @@ export function LoadingOverlay({ visible, message }: { visible: boolean; message
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(14,17,22,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
