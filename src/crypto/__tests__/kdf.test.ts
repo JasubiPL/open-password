@@ -2,6 +2,8 @@ import {
   deriveAuthHash,
   deriveMasterKey,
   generateSalt,
+  LEGACY_ARGON2_PARAMS,
+  normalizeArgon2Params,
   SALT_LENGTH,
   type Argon2Params,
 } from '../kdf';
@@ -51,5 +53,22 @@ describe('kdf', () => {
     const k1 = bytesToHex(deriveMasterKey(nfc, salt, FAST_PARAMS));
     const k2 = bytesToHex(deriveMasterKey(nfd, salt, FAST_PARAMS));
     expect(k1).toEqual(k2);
+  });
+
+  describe('normalizeArgon2Params', () => {
+    it('acepta params válidos del servidor', () => {
+      const p = { t: 1, m: 2048, p: 1, dkLen: 32 };
+      expect(normalizeArgon2Params(p)).toEqual(p);
+    });
+
+    it('cae a LEGACY cuando faltan o son inválidos (cuenta vieja)', () => {
+      // null/undefined (cuenta sin kdf_params guardado)
+      expect(normalizeArgon2Params(null)).toEqual(LEGACY_ARGON2_PARAMS);
+      expect(normalizeArgon2Params(undefined)).toEqual(LEGACY_ARGON2_PARAMS);
+      // objeto incompleto o con valores no numéricos / no positivos
+      expect(normalizeArgon2Params({ t: 1, m: 2048 })).toEqual(LEGACY_ARGON2_PARAMS);
+      expect(normalizeArgon2Params({ t: 0, m: 2048, p: 1, dkLen: 32 })).toEqual(LEGACY_ARGON2_PARAMS);
+      expect(normalizeArgon2Params({ t: '1', m: 2048, p: 1, dkLen: 32 })).toEqual(LEGACY_ARGON2_PARAMS);
+    });
   });
 });

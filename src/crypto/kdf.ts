@@ -28,16 +28,42 @@ export interface Argon2Params {
 }
 
 /**
- * Parámetros Argon2id por defecto.
+ * Parámetros Argon2id por defecto para cuentas NUEVAS.
  *
  * Argon2id en JS puro corre en el ÚNICO hilo de JS de React Native y lo bloquea
- * mientras dura (no hay workers en Expo Go; ver ADR 0002). Por eso elegimos un
- * coste deliberadamente bajo (~8 MiB / 2 pasadas) para que el bloqueo sea corto
- * (~1-2 s en gama media) y la app no dispare un ANR. Es más débil que el mínimo
- * OWASP (~19 MiB): el camino para subirlo es un dev build con Argon2 nativo,
- * guardando los parámetros por usuario en `profiles` para no romper cuentas.
+ * mientras dura (no hay workers en Expo Go; ver ADR 0002). En Hermes (sin JIT)
+ * incluso 8 MiB / 2 pasadas tardaba ~30 s en gama media, lo que hacía el login y
+ * el unlock por contraseña inusables. Bajamos a ~2 MiB / 1 pasada para que el
+ * bloqueo sea de unos segundos. Es más débil que el mínimo OWASP (~19 MiB): el
+ * camino para subirlo sin penalización es un dev build con Argon2 NATIVO.
+ *
+ * Estos parámetros se guardan **por usuario** (junto al salt), así que se pueden
+ * cambiar para cuentas futuras sin romper las existentes (cada cuenta deriva con
+ * los suyos). Ver `LEGACY_ARGON2_PARAMS` y `normalizeArgon2Params`.
  */
-export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 2, m: 8192, p: 1, dkLen: 32 };
+export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 1, m: 2048, p: 1, dkLen: 32 };
+
+/**
+ * Parámetros de las cuentas creadas antes de guardar params por usuario. Cuando
+ * el servidor no devuelve `kdf_params` (cuenta legacy), derivamos con estos para
+ * no romper el login/unlock de esas cuentas.
+ */
+export const LEGACY_ARGON2_PARAMS: Argon2Params = { t: 2, m: 8192, p: 1, dkLen: 32 };
+
+/**
+ * Valida y normaliza unos params Argon2 venidos del servidor (jsonb). Si faltan
+ * o son inválidos (cuenta legacy), devuelve `LEGACY_ARGON2_PARAMS`.
+ */
+export function normalizeArgon2Params(raw: unknown): Argon2Params {
+  if (raw && typeof raw === 'object') {
+    const p = raw as Record<string, unknown>;
+    const ok = (['t', 'm', 'p', 'dkLen'] as const).every(
+      (k) => typeof p[k] === 'number' && (p[k] as number) > 0,
+    );
+    if (ok) return { t: p.t as number, m: p.m as number, p: p.p as number, dkLen: p.dkLen as number };
+  }
+  return LEGACY_ARGON2_PARAMS;
+}
 
 /**
  * Parámetros Argon2id activos. Por defecto los de producción; se pueden ajustar
@@ -48,6 +74,15 @@ let activeArgon2Params: Argon2Params = DEFAULT_ARGON2_PARAMS;
 /** Sobreescribe los parámetros Argon2id usados por `deriveMasterKey` por defecto. */
 export function configureArgon2Params(params: Argon2Params): void {
   activeArgon2Params = params;
+}
+
+/**
+ * Params Argon2id activos: los que usa una cuenta NUEVA al registrarse (se
+ * guardan junto a su salt). Por defecto `DEFAULT_ARGON2_PARAMS`; los tests los
+ * bajan con `configureArgon2Params`.
+ */
+export function getActiveArgon2Params(): Argon2Params {
+  return activeArgon2Params;
 }
 
 export const SALT_LENGTH = 16;

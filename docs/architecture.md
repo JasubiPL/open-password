@@ -27,9 +27,14 @@ El repo está vacío salvo el `LICENSE`, así que es un proyecto **desde cero**.
 Diseño estilo Bitwarden/1Password, **cero-conocimiento**:
 
 1. **Derivación de clave (KDF):** al crear cuenta, el usuario define una *contraseña
-   maestra*. Con `Argon2id(masterPassword, salt = userId/email, params)` se deriva la
-   **Master Key**. El salt y los parámetros de Argon2 se guardan en el perfil del servidor
-   (no son secretos).
+   maestra*. Con `Argon2id(masterPassword, salt, params)` se deriva la **Master Key**. El salt
+   y los **parámetros de Argon2 se guardan POR USUARIO** (perfil + `user_metadata`; no son
+   secretos) y el prelogin los devuelve, así cada cuenta re-deriva con los suyos y se pueden
+   cambiar los defaults sin romper cuentas existentes (`normalizeArgon2Params` cae a
+   `LEGACY_ARGON2_PARAMS` si faltan). Default ligero (~2 MiB/1 pasada) porque Argon2id en JS
+   puro sobre Hermes (sin JIT) era ~30 s con 8 MiB/2 pasadas; el camino para subirlo a niveles
+   OWASP sin penalización es un **dev build con Argon2 nativo** (ver ADR 0002). El desbloqueo
+   biométrico evita el KDF por completo (carga la Vault Key del secure store).
 2. **Vault Key (clave simétrica):** se genera una clave aleatoria AES-256 (`expo-crypto`).
    Esta clave cifra TODOS los datos. Se guarda en el servidor **cifrada con la Master Key**
    (“protected symmetric key”). Solo se descifra en el dispositivo tras introducir la
