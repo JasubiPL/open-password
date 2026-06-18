@@ -42,9 +42,13 @@ Diseño estilo Bitwarden/1Password, **cero-conocimiento**:
    servidor guarda únicamente ciphertext + IV + metadatos no sensibles (timestamps).
 5. **En memoria:** la Master Key y la Vault Key viven **solo en RAM** durante la sesión;
    nunca se persisten en claro.
-6. **Biometría:** tras el primer desbloqueo, se guarda la Vault Key en
-   `expo-secure-store` (Keychain iOS / Keystore Android, con `requireAuthentication`) para
-   desbloqueos posteriores con Face ID / huella sin reescribir la contraseña maestra.
+6. **Biometría:** tras un desbloqueo con contraseña, se guarda la Vault Key en
+   `expo-secure-store` (Keychain iOS / Keystore Android, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`) para
+   desbloqueos posteriores con Face ID / huella sin reescribir la contraseña maestra (y sin
+   pagar Argon2id, por eso el unlock biométrico es instantáneo). El gate biométrico es un
+   `authenticateAsync` explícito al desbloquear; **no** se usa `requireAuthentication` en el
+   secure store porque dispara un prompt también al ESCRIBIR (enrolamiento). Trade-off de
+   conveniencia; ver ADR 0002.
 
 **Librerías de cripto (puro JS, auditadas, funcionan en Expo Go — sin build nativo):**
 - `@noble/hashes` → `argon2id`, `pbkdf2`, `hkdf`, `sha256`.
