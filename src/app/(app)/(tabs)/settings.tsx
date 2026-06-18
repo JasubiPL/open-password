@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BrandSignature } from '@/components/BrandSignature';
 import { Colors } from '@/constants/theme';
 import { getVaultKey } from '@/crypto';
 import { useSession } from '@/store/session';
@@ -15,6 +17,7 @@ import {
 const SOON = () => Alert.alert('Próximamente', 'Esta opción llega en la Fase 6 (pulido).');
 
 export default function Settings() {
+  const router = useRouter();
   const email = useSession((s) => s.email);
   const logout = useSession((s) => s.logout);
   const lock = useSession((s) => s.lock);
@@ -104,6 +107,9 @@ export default function Settings() {
           <Row icon="contrast-outline" label="Tema" onPress={SOON} divider>
             <Text style={styles.value}>Oscuro ›</Text>
           </Row>
+          <Row icon="information-circle-outline" label="Acerca de" onPress={() => router.push('/about')} divider>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+          </Row>
         </View>
 
         <Pressable
@@ -115,6 +121,7 @@ export default function Settings() {
         </Pressable>
 
         <Text style={styles.footer}>Open Password v1.0 · cero-conocimiento · MIT</Text>
+        <BrandSignature />
       </ScrollView>
     </SafeAreaView>
   );

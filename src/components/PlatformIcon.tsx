@@ -3,10 +3,27 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { getPlatform } from '@/constants/platforms';
 
+/** Luminancia relativa aproximada (0..1) de un color hex. */
+function luminance(hex: string): number {
+  const m = hex.replace('#', '');
+  const full = m.length === 3 ? m.split('').map((c) => c + c).join('') : m;
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Tinta para el glifo sobre tile BLANCO: el color de marca, u oscuro si es muy claro. */
+function inkOnWhite(color: string): string {
+  return luminance(color) > 0.72 ? '#15191F' : color;
+}
+
 /**
- * Icono para una entrada: logo de marca (FontAwesome6) o icono de categoría
- * (Ionicons) si la plataforma está en el catálogo; si no, la inicial del título
- * sobre un badge con `fallbackColor`.
+ * Icono para una entrada:
+ *  - Marca conocida → logo (FontAwesome6) sobre **tile blanco** en color de marca,
+ *    como en el handoff de diseño (tinta oscura para marcas casi blancas).
+ *  - Categoría genérica → glifo (Ionicons) sobre tile tintado.
+ *  - Desconocida → inicial del título sobre tile tintado; o un candado.
  */
 export function PlatformIcon({
   platform,
@@ -21,13 +38,24 @@ export function PlatformIcon({
 }) {
   const known = getPlatform(platform);
   const iconSize = Math.round(size * 0.52);
-  const tint = known?.color ?? fallbackColor;
+  const radius = size * 0.27;
 
+  if (known?.kind === 'brand' && known.iconSet === 'fa6') {
+    return (
+      <View style={[styles.badge, styles.brandTile, { width: size, height: size, borderRadius: radius }]}>
+        <FontAwesome6
+          name={known.icon as keyof typeof FontAwesome6.glyphMap}
+          size={iconSize}
+          color={inkOnWhite(known.color)}
+        />
+      </View>
+    );
+  }
+
+  const tint = known?.color ?? fallbackColor;
   return (
-    <View style={[styles.badge, { width: size, height: size, borderRadius: size * 0.27, backgroundColor: tint + '22' }]}>
-      {known?.iconSet === 'fa6' ? (
-        <FontAwesome6 name={known.icon as keyof typeof FontAwesome6.glyphMap} size={iconSize} color={tint} />
-      ) : known?.iconSet === 'ion' ? (
+    <View style={[styles.badge, { width: size, height: size, borderRadius: radius, backgroundColor: tint + '22' }]}>
+      {known?.iconSet === 'ion' ? (
         <Ionicons name={known.icon as keyof typeof Ionicons.glyphMap} size={iconSize} color={tint} />
       ) : title ? (
         <Text style={[styles.initial, { fontSize: iconSize, color: tint }]}>{title.charAt(0).toUpperCase()}</Text>
@@ -40,5 +68,6 @@ export function PlatformIcon({
 
 const styles = StyleSheet.create({
   badge: { alignItems: 'center', justifyContent: 'center' },
+  brandTile: { backgroundColor: '#FFFFFF' },
   initial: { fontWeight: '700' },
 });

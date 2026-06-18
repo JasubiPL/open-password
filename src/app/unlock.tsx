@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { BrandSignature } from '@/components/BrandSignature';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/store/session';
 import { isBiometricEnabled, unlockWithBiometrics } from '@/lib/biometric';
@@ -112,6 +113,7 @@ export default function Unlock() {
         <Pressable accessibilityRole="button" onPress={logout} style={styles.logoutWrap}>
           <Text style={styles.logout}>Usar otra cuenta / Cerrar sesión</Text>
         </Pressable>
+        <BrandSignature />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

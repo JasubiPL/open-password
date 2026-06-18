@@ -291,7 +291,14 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **Detalle de entrada ✅** (`(app)/item.tsx`): icono grande, tarjetas USUARIO/CONTRASEÑA con
   mostrar/ocultar y copiar (feedback inline), barra de fuerza, notas, meta "modificado hace…",
   botones Editar + eliminar — ref_2.
-- **Pendiente en Fase 5:** logos de marca a color (SVG), import CSV real, branding/atribución.
+- **Logos de marca ✅** (`PlatformIcon`): glifos de marca (FontAwesome6) sobre **tile blanco** en
+  color de marca (tinta oscura para marcas casi blancas tipo GitHub/Apple), como en el handoff;
+  categorías genéricas en tile tintado; fallback a inicial. (Logos full-color SVG vía
+  `react-native-svg` + colección "Logos" quedan como mejora futura cuando se bundleen los assets.)
+- **Branding / atribución ✅**: `BrandSignature` (*JasubiP® 2015–2026*) en Login, Desbloqueo y pie
+  de Ajustes; pantalla **Acerca de** (`(app)/about.tsx`) con imagotipo horizontal, versión/cifrado/
+  licencia, link al repo y leyenda completa de autoría.
+- **Diferido a pedido del usuario:** import CSV (cargará entradas a mano por ahora).
 - **Logos de marca a color** (`src/icons/brand.ts`): bundlear SVGs full-color (colección
   "Logos") en `assets/brand-logos/`, mapear por dominio/nombre y renderizar con
   `react-native-svg` (vía `react-native-svg-transformer`); fallback a avatar inicial + color.
