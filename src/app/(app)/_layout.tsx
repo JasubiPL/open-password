@@ -13,12 +13,18 @@ export default function AppLayout() {
   const unlocked = useSession((s) => s.unlocked);
   const loaded = useVaults((s) => s.loaded);
   const load = useVaults((s) => s.load);
+  const sync = useVaults((s) => s.sync);
 
   useEffect(() => {
     if (status === 'signedIn' && unlocked && !loaded) {
-      initDatabase().then(load).catch(() => {});
+      // Carga local primero (instantáneo, offline), luego sincroniza con el
+      // servidor en segundo plano (push de pendientes + pull de remotos).
+      initDatabase()
+        .then(load)
+        .then(() => sync())
+        .catch(() => {});
     }
-  }, [status, unlocked, loaded, load]);
+  }, [status, unlocked, loaded, load, sync]);
 
   if (status === 'loading') return null;
   if (status === 'signedOut') return <Redirect href="/onboarding" />;

@@ -239,9 +239,27 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   expo-doctor 21/21.
 - Nota: persistencia **solo local** (sin sync). La sincronización con Supabase es la Fase 4.
 
-### Fase 4 — Sync con Supabase
-- `supabase/migrations`: schema + políticas RLS (`auth.uid()`).
-- `sync.ts`: push/pull incremental por `updated_at`, manejo de soft-deletes y conflictos.
+### Fase 4 — Sync con Supabase 🚧 (en progreso)
+- **Migración** `0003_vaults_items.sql`: tablas `vaults`/`items` que **espejan el cache local**
+  (solo blob cifrado `data` + metadatos: ids, timestamps en ms del cliente, flag `deleted`),
+  con RLS por `auth.uid()` (select/insert/update/delete propios) e índices `(user_id, updated_at)`.
+  Sin columnas en claro (icon/color/etc. van dentro del blob → más cero-conocimiento que el
+  plan original).
+- **Esquema local** (`src/db/database.ts`): columna `dirty` (cambios pendientes de subir) y
+  tabla `sync_meta` (cursor de pull por tabla); migración versionada (`PRAGMA user_version`)
+  para installs de Fase 3.
+- **`src/lib/sync.ts`** (`syncNow`): **push** de filas `dirty` vía upsert (luego las marca
+  limpias) + **pull** incremental por `updated_at > cursor` con **last-writer-wins** por fila
+  (la remota gana solo si es estrictamente más nueva) y propagación de soft-deletes. No-op sin
+  sesión (offline-first). Conflicto a nivel de fila (el registro es un blob opaco).
+- **Wiring**: `useVaults.sync()` (push+pull, recarga solo si el pull trajo cambios) se llama al
+  desbloquear tras el `load` local; cada mutación dispara un push en segundo plano.
+- **Tests** (Jest): `sync.test.ts` (6) con SQLite + Supabase en memoria cubre push, pull, LWW
+  (ambos sentidos), soft-delete y sin-sesión.
+- Trade-off: `updated_at` es reloj del cliente (posible skew entre dispositivos, aceptado para
+  el MVP). Realtime y reconciliación automática de cambios remotos en vivo → futuro.
+- ⚠️ Requiere aplicar `0003` al proyecto Supabase (`supabase db push` o el SQL editor) antes
+  de probar el sync end-to-end.
 
 ### Fase 5 — Funcionalidades MVP restantes
 - **Generador** (`generator.tsx`): longitud, mayúsc/minúsc/números/símbolos, usando

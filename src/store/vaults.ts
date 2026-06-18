@@ -9,6 +9,12 @@ import { create } from 'zustand';
 import { getDb, clearDatabase } from '@/db/database';
 import { decryptRecord, encryptRecord } from '@/lib/vaultCrypto';
 import { newId } from '@/lib/id';
+import { syncNow } from '@/lib/sync';
+
+/** Empuja cambios locales al servidor en segundo plano (best-effort, sin red → no-op). */
+function pushInBackground(): void {
+  void syncNow().catch(() => {});
+}
 
 export interface Vault {
   id: string;
@@ -48,6 +54,8 @@ interface VaultsState {
   loaded: boolean;
 
   load: () => Promise<void>;
+  /** Sincroniza con Supabase (push + pull) y recarga la vista descifrada. */
+  sync: () => Promise<void>;
   reset: () => void;
   createVault: (input: VaultInput) => Promise<Vault>;
   updateVault: (id: string, input: VaultInput) => Promise<void>;
@@ -97,6 +105,12 @@ export const useVaults = create<VaultsState>((set, get) => ({
     set({ vaults, items, loaded: true });
   },
 
+  sync: async () => {
+    const result = await syncNow();
+    // Solo recargamos si el pull trajo cambios remotos (evita parpadeos).
+    if (result.pulled > 0) await get().load();
+  },
+
   reset: () => set({ vaults: [], items: [], loaded: false }),
 
   createVault: async (input) => {
@@ -111,6 +125,7 @@ export const useVaults = create<VaultsState>((set, get) => ({
       now,
     ]);
     set({ vaults: [vault, ...get().vaults] });
+    pushInBackground();
     return vault;
   },
 
@@ -118,21 +133,23 @@ export const useVaults = create<VaultsState>((set, get) => ({
     const db = await getDb();
     const now = Date.now();
     const data: VaultData = { name: input.name, icon: input.icon, color: input.color };
-    await db.runAsync('UPDATE vaults SET data = ?, updated_at = ? WHERE id = ?', [encryptRecord(data), now, id]);
+    await db.runAsync('UPDATE vaults SET data = ?, updated_at = ?, dirty = 1 WHERE id = ?', [encryptRecord(data), now, id]);
     set({
       vaults: get().vaults.map((v) => (v.id === id ? { ...v, ...input, updatedAt: now } : v)),
     });
+    pushInBackground();
   },
 
   deleteVault: async (id) => {
     const db = await getDb();
     const now = Date.now();
-    await db.runAsync('UPDATE vaults SET deleted = 1, updated_at = ? WHERE id = ?', [now, id]);
-    await db.runAsync('UPDATE items SET deleted = 1, updated_at = ? WHERE vault_id = ?', [now, id]);
+    await db.runAsync('UPDATE vaults SET deleted = 1, updated_at = ?, dirty = 1 WHERE id = ?', [now, id]);
+    await db.runAsync('UPDATE items SET deleted = 1, updated_at = ?, dirty = 1 WHERE vault_id = ?', [now, id]);
     set({
       vaults: get().vaults.filter((v) => v.id !== id),
       items: get().items.filter((it) => it.vaultId !== id),
     });
+    pushInBackground();
   },
 
   createItem: async (vaultId, input) => {
@@ -147,23 +164,26 @@ export const useVaults = create<VaultsState>((set, get) => ({
       now,
     ]);
     set({ items: [item, ...get().items] });
+    pushInBackground();
     return item;
   },
 
   updateItem: async (id, input) => {
     const db = await getDb();
     const now = Date.now();
-    await db.runAsync('UPDATE items SET data = ?, updated_at = ? WHERE id = ?', [encryptRecord(input), now, id]);
+    await db.runAsync('UPDATE items SET data = ?, updated_at = ?, dirty = 1 WHERE id = ?', [encryptRecord(input), now, id]);
     set({
       items: get().items.map((it) => (it.id === id ? { ...it, ...input, updatedAt: now } : it)),
     });
+    pushInBackground();
   },
 
   deleteItem: async (id) => {
     const db = await getDb();
     const now = Date.now();
-    await db.runAsync('UPDATE items SET deleted = 1, updated_at = ? WHERE id = ?', [now, id]);
+    await db.runAsync('UPDATE items SET deleted = 1, updated_at = ?, dirty = 1 WHERE id = ?', [now, id]);
     set({ items: get().items.filter((it) => it.id !== id) });
+    pushInBackground();
   },
 }));
 
