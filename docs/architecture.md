@@ -270,10 +270,35 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - ⚠️ Requiere aplicar `0003` al proyecto Supabase (`supabase db push` o el SQL editor) antes
   de probar el sync end-to-end.
 
-### Fase 5 — Funcionalidades MVP restantes
-- **Generador** (`generator.tsx`): longitud, mayúsc/minúsc/números/símbolos, usando
-  `expo-crypto` para aleatoriedad. Indicador de fuerza.
-- **Iconos de UI**: usar `@expo/vector-icons` en toda la app (no `react-icons`).
+### Fase 5 — Funcionalidades MVP restantes 🚧 (en progreso)
+- **Navegación por tabs ✅** (`src/app/(app)/(tabs)/`): Bóvedas, Buscar, Generador, Ajustes.
+  Las pantallas de detalle (vault/item/forms) quedan en el Stack de `(app)` y se apilan sobre
+  las tabs. Las rutas `/vaults`, `/vault`, etc. se mantienen (los grupos no cambian la URL).
+- **Generador ✅** (`(tabs)/generator.tsx` + `src/lib/generator.ts`): longitud (slider 8–64),
+  mayúsculas/números/símbolos/evitar-ambiguos, CSPRNG (`randomBytes`) con muestreo por rechazo,
+  indicador de fuerza por bits de entropía, copiar con auto-limpieza. Tests (8) en
+  `generator.test.ts`.
+- **Ajustes ✅** (`(tabs)/settings.tsx`): tarjeta de cuenta, toggle de **biometría** funcional,
+  bloquear ahora, cerrar sesión, footer de versión; placeholders (auto-bloqueo, cambiar maestra,
+  importar CSV, tema) → Fase 6/pendientes.
+- **Buscar ✅** (`(tabs)/search.tsx`): búsqueda global en memoria sobre todas las entradas
+  (título/usuario/URL/notas) con iconos de marca.
+- **UI alineada al handoff** (`docs/design/handoff/references/`): tema menta oscuro, grid de
+  bóvedas 2-col, FAB, monoespaciada para contraseñas.
+- **Iconos de UI ✅**: `@expo/vector-icons` en toda la app (no `react-icons`).
+- **Detalle de bóveda ✅** (`(app)/vault.tsx`): header con icono + nombre + conteo, chips de
+  categoría, filas con logo + copia rápida de contraseña, menú kebab (editar/eliminar) — ref_4.
+- **Detalle de entrada ✅** (`(app)/item.tsx`): icono grande, tarjetas USUARIO/CONTRASEÑA con
+  mostrar/ocultar y copiar (feedback inline), barra de fuerza, notas, meta "modificado hace…",
+  botones Editar + eliminar — ref_2.
+- **Logos de marca ✅** (`PlatformIcon`): glifos de marca (FontAwesome6) sobre **tile blanco** en
+  color de marca (tinta oscura para marcas casi blancas tipo GitHub/Apple), como en el handoff;
+  categorías genéricas en tile tintado; fallback a inicial. (Logos full-color SVG vía
+  `react-native-svg` + colección "Logos" quedan como mejora futura cuando se bundleen los assets.)
+- **Branding / atribución ✅**: `BrandSignature` (*JasubiP® 2015–2026*) en Login, Desbloqueo y pie
+  de Ajustes; pantalla **Acerca de** (`(app)/about.tsx`) con imagotipo horizontal, versión/cifrado/
+  licencia, link al repo y leyenda completa de autoría.
+- **Diferido a pedido del usuario:** import CSV (cargará entradas a mano por ahora).
 - **Logos de marca a color** (`src/icons/brand.ts`): bundlear SVGs full-color (colección
   "Logos") en `assets/brand-logos/`, mapear por dominio/nombre y renderizar con
   `react-native-svg` (vía `react-native-svg-transformer`); fallback a avatar inicial + color.

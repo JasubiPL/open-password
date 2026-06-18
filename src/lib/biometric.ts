@@ -93,5 +93,11 @@ export async function unlockWithBiometrics(): Promise<boolean> {
   if (!vaultKey) return false;
 
   setVaultKey(vaultKey);
+
+  // Auto-migración: cuentas enroladas antes de quitar `requireAuthentication`
+  // dejaron un ítem con ACL biométrica que pide autenticación TAMBIÉN al leer
+  // (doble prompt). Re-guardarlo con la ACL actual (sin requireAuthentication)
+  // lo migra; los próximos desbloqueos piden biometría una sola vez.
+  await saveVaultKeyToSecureStore(vaultKey).catch(() => {});
   return true;
 }

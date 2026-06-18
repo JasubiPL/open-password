@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { BrandSignature } from '@/components/BrandSignature';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/store/session';
 
@@ -74,6 +75,8 @@ export default function Login() {
               <Text style={styles.link}>¿Crear cuenta?</Text>
             </Pressable>
           </Link>
+
+          <BrandSignature style={styles.signature} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -89,4 +92,5 @@ const styles = StyleSheet.create({
   error: { color: Colors.danger, fontSize: 13 },
   linkWrap: { alignItems: 'center', paddingVertical: 12 },
   link: { color: Colors.accent, fontSize: 15, fontWeight: '600' },
+  signature: { marginTop: 24 },
 });
