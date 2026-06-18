@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { StrengthMeter } from '@/components/StrengthMeter';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/store/session';
 import { isAcceptableMasterPassword, MIN_MASTER_PASSWORD_LENGTH } from '@/lib/passwordStrength';
@@ -48,6 +49,7 @@ export default function Register() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <LoadingOverlay visible={loading} message="Creando tu bóveda…" />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Crear bóveda</Text>

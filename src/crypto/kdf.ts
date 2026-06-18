@@ -28,12 +28,16 @@ export interface Argon2Params {
 }
 
 /**
- * Parámetros Argon2id por defecto: mínimo recomendado por OWASP
- * (~19 MiB / 2 pasadas / 1 lane). Elegidos para ser usables en JS puro sobre
- * móvil (ADR 0002): Argon2id de 64 MiB en JS bloquea el dispositivo varios
- * segundos. Solo corre al registrarse/desbloquear.
+ * Parámetros Argon2id por defecto.
+ *
+ * Argon2id en JS puro corre en el ÚNICO hilo de JS de React Native y lo bloquea
+ * mientras dura (no hay workers en Expo Go; ver ADR 0002). Por eso elegimos un
+ * coste deliberadamente bajo (~8 MiB / 2 pasadas) para que el bloqueo sea corto
+ * (~1-2 s en gama media) y la app no dispare un ANR. Es más débil que el mínimo
+ * OWASP (~19 MiB): el camino para subirlo es un dev build con Argon2 nativo,
+ * guardando los parámetros por usuario en `profiles` para no romper cuentas.
  */
-export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 2, m: 19456, p: 1, dkLen: 32 };
+export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 2, m: 8192, p: 1, dkLen: 32 };
 
 /**
  * Parámetros Argon2id activos. Por defecto los de producción; se pueden ajustar

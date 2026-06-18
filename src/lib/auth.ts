@@ -41,10 +41,20 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/**
+ * Cede el hilo de JS un macrotask (setTimeout) para que React pueda pintar el
+ * overlay de carga ANTES de que Argon2id bloquee el hilo. `await nextTick` de
+ * noble usa microtasks y no basta: no devuelven control a React Native.
+ */
+function yieldToUI(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 /** Crea la cuenta, el perfil cifrado y desbloquea la bóveda en esta sesión. */
 export async function register(email: string, masterPassword: string): Promise<void> {
   const normalizedEmail = normalizeEmail(email);
   const salt = generateSalt();
+  await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
   const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
   const vaultKey = generateVaultKey();
   const protectedVaultKey = protectVaultKey(vaultKey, masterKey);
@@ -88,6 +98,7 @@ export async function login(email: string, masterPassword: string): Promise<void
     throw new Error('No existe una cuenta con ese email.');
   }
   const salt = base64ToBytes(saltB64);
+  await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
   const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -108,6 +119,7 @@ export async function login(email: string, masterPassword: string): Promise<void
 export async function unlock(masterPassword: string): Promise<void> {
   const profile = await fetchProfile();
   const salt = base64ToBytes(profile.salt);
+  await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
   const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
   // unprotect lanza si la contraseña es incorrecta (fallo de autenticación GCM).
   const vaultKey = unprotectVaultKey(profile.protected_vault_key, masterKey);

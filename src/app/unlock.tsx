@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/store/session';
 import { isBiometricAvailable, unlockWithBiometrics } from '@/lib/biometric';
@@ -68,6 +69,7 @@ export default function Unlock() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <LoadingOverlay visible={loading} message="Desbloqueando…" />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.content}>
           <Image
