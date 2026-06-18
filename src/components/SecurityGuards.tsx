@@ -1,17 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as ScreenCapture from 'expo-screen-capture';
+import * as Network from 'expo-network';
 import { useSession } from '@/store/session';
 import { useVaults } from '@/store/vaults';
 import { usePreferences } from '@/store/preferences';
 
 /**
- * Guardas de seguridad de Fase 6 (sin UI):
+ * Guardas de seguridad / conectividad (sin UI):
  *  - **Auto-bloqueo:** al volver del segundo plano, si pasó más del umbral
  *    configurado, limpia la Vault Key de RAM (la app pide desbloqueo otra vez).
  *    Con umbral 0 ("Al salir") bloquea apenas la app pasa a segundo plano.
  *  - **Bloqueo de capturas:** activa/desactiva `expo-screen-capture` según la
  *    preferencia (FLAG_SECURE en Android; difuminado en iOS).
+ *  - **Reconexión:** al recuperar internet, sincroniza (sube pendientes + baja
+ *    remotos) aunque la app esté abierta y quieta.
  */
 export function SecurityGuards() {
   const blockScreenshots = usePreferences((s) => s.blockScreenshots);
@@ -43,6 +46,19 @@ export function SecurityGuards() {
     };
 
     const sub = AppState.addEventListener('change', onChange);
+    return () => sub.remove();
+  }, []);
+
+  // Sincronización al recuperar la conexión (offline → online).
+  useEffect(() => {
+    let online: boolean | null = null;
+    const sub = Network.addNetworkStateListener((state) => {
+      const now = state.isInternetReachable ?? state.isConnected ?? false;
+      if (online === false && now && useSession.getState().unlocked) {
+        void useVaults.getState().sync();
+      }
+      online = now;
+    });
     return () => sub.remove();
   }, []);
 

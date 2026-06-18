@@ -264,13 +264,15 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **Wiring / disparadores**: `useVaults.sync()` (push+pull, recarga solo si el pull trajo
   cambios; expone `syncing`/`lastSyncedAt`/`lastSyncOk`) corre: (a) al desbloquear tras el `load`
   local, (b) al **volver a foreground** estando desbloqueada (`SecurityGuards`), (c) **manual**
-  desde Ajustes → "Sincronizar ahora", y (d) un push best-effort tras cada mutación. Offline-first:
+  desde Ajustes → "Sincronizar ahora", (d) un push best-effort tras cada mutación, y (e) al
+  **recuperar la conexión** (`expo-network` listener en `SecurityGuards`, offline→online). Offline-first:
   todo se guarda local (cifrado) marcado `dirty` y se sube al reconectar. (Nota: el **primer login
   en un dispositivo** sí requiere red; los desbloqueos posteriores son offline.)
 - **Aviso de sincronización** (`src/lib/notifications.ts`, `expo-notifications`): cuando un `sync()`
   sube claves locales pendientes (`pushed > 0`, p. ej. al reconectar tras crearlas offline), se
   dispara una **notificación local del sistema** (mensaje genérico, sin datos sensibles; se muestra
-  también en foreground). Best-effort: no-op sin permiso o sin el módulo.
+  también en foreground, con el **icono de la app** y **sonido por defecto** del teléfono — plugin
+  `expo-notifications` en `app.json`). Best-effort: no-op sin permiso o sin el módulo.
 - **Tests** (Jest): `sync.test.ts` (6) con SQLite + Supabase en memoria cubre push, pull, LWW
   (ambos sentidos), soft-delete y sin-sesión.
 - Trade-off: `updated_at` es reloj del cliente (posible skew entre dispositivos, aceptado para

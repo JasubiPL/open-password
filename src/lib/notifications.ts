@@ -35,7 +35,7 @@ export function setupNotifications(): void {
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: false,
+      shouldPlaySound: true, // sonido por defecto del teléfono
       shouldSetBadge: false,
     }),
   });
@@ -66,6 +66,7 @@ export async function notifyKeysSynced(count: number): Promise<void> {
           count > 1
             ? `Tus ${count} claves locales se sincronizaron en la nube ✓`
             : 'Tu clave local se sincronizó en la nube ✓',
+        sound: 'default', // sonido por defecto del sistema
       },
       trigger: null, // inmediata
     });

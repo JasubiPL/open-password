@@ -40,7 +40,14 @@
       "expo-status-bar",
       "expo-web-browser",
       "expo-secure-store",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/branding/adaptive-icon.png",
+          "color": "#2DD4BF"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
