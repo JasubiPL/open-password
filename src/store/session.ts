@@ -13,6 +13,7 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { clearVaultKey, isUnlocked } from '@/crypto';
 import * as auth from '@/lib/auth';
+import { syncBiometricEnrollment } from '@/lib/biometric';
 import { useVaults, wipeLocalVaults } from '@/store/vaults';
 
 export type SessionStatus = 'loading' | 'signedOut' | 'signedIn';
@@ -62,6 +63,7 @@ export const useSession = create<SessionState>((set, get) => ({
     const result = await auth.register(email, masterPassword);
     if (result === 'unlocked') {
       set({ status: 'signedIn', email: email.trim().toLowerCase(), unlocked: isUnlocked() });
+      void syncBiometricEnrollment(); // habilita biometría con la Vault Key ya en RAM
     }
     return result;
   },
@@ -69,11 +71,13 @@ export const useSession = create<SessionState>((set, get) => ({
   login: async (email, masterPassword) => {
     await auth.login(email, masterPassword);
     set({ status: 'signedIn', email: email.trim().toLowerCase(), unlocked: isUnlocked() });
+    void syncBiometricEnrollment(); // habilita biometría con la Vault Key ya en RAM
   },
 
   unlock: async (masterPassword) => {
     await auth.unlock(masterPassword);
     set({ unlocked: isUnlocked() });
+    void syncBiometricEnrollment(); // habilita biometría con la Vault Key ya en RAM
   },
 
   lock: () => {

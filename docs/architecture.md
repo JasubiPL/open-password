@@ -193,7 +193,11 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   maestra y desenvuelve), `logout`.
 - **Store de sesión** (`src/store/session.ts`, Zustand): ejes `status` (sesión) y `unlocked`
   (Vault Key en RAM); bootstrap + suscripción a `onAuthStateChange`.
-- **Biometría** (`src/lib/biometric.ts`, `expo-local-authentication` + secure store).
+- **Biometría** (`src/lib/biometric.ts`, `expo-local-authentication` + secure store). El
+  enrolamiento (`syncBiometricEnrollment`) guarda la Vault Key en el secure store
+  (`requireAuthentication`) tras un desbloqueo con contraseña; la pantalla de unlock solo
+  ofrece el botón si está realmente habilitado (`isBiometricEnabled`), y el desbloqueo lee la
+  clave directo del keychain (un único prompt del SO, sin doble autenticación).
 - **Migraciones** `supabase/migrations/`: `0001_profiles.sql` (tabla `profiles` salt +
   `protected_vault_key`, RLS por `auth.uid()`, RPC `get_salt_by_email`; salt no es secreto,
   permite enumeración — aceptado para el MVP, estilo Bitwarden) y
@@ -208,7 +212,11 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **Tests** (Jest): orquestación register→login→unlock recupera la misma Vault Key, fallos
   con contraseña/email incorrectos, y medidor de fuerza. `configureArgon2Params` permite
   acelerar Argon2 en tests. Verificado: `npm test` 26/26, `tsc` OK, expo-doctor 21/21.
-- ⚠️ Pendiente de verificación end-to-end contra un proyecto Supabase real (falta `.env`).
+- **Verificación E2E ✅:** `src/lib/__tests__/auth.e2e.test.ts` corre register→login→unlock
+  contra el Supabase real (cripto + Auth + RLS + RPC prelogin), validando que se recupera la
+  misma Vault Key y que la contraseña incorrecta falla. Es opt-in (`npm run test:e2e`,
+  `RUN_E2E=1`) para no crear usuarios en cada `npm test`; requiere "Confirm email" desactivado.
+  Conectividad/RLS: `npm run check:supabase`.
 
 ### Fase 3 — Bóvedas e items (CRUD local + cifrado) ✅ (hecho)
 - **Cache local** (`src/db/database.ts`, `expo-sqlite`): tablas `vaults`/`items` con solo
