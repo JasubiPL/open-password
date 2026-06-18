@@ -4,6 +4,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
+import { PlatformIcon } from '@/components/PlatformIcon';
 import { useVaults, type VaultItem } from '@/store/vaults';
 
 export default function VaultDetail() {
@@ -33,11 +34,7 @@ export default function VaultDetail() {
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
       onPress={() => router.push({ pathname: '/item', params: { id: item.id } })}
     >
-      <View style={[styles.rowIcon, { backgroundColor: vault.color + '22' }]}>
-        <Text style={[styles.rowInitial, { color: vault.color }]}>
-          {(item.title || '?').charAt(0).toUpperCase()}
-        </Text>
-      </View>
+      <PlatformIcon platform={item.platform} title={item.title} size={40} fallbackColor={vault.color} />
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle}>{item.title || 'Sin título'}</Text>
         {item.username ? <Text style={styles.rowSub}>{item.username}</Text> : null}

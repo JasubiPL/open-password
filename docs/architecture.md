@@ -221,6 +221,12 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   (selector de color e icono con `@expo/vector-icons`), detalle de bóveda con **búsqueda en
   memoria**, crear/editar/borrar entrada, y detalle de entrada con mostrar/ocultar
   contraseña, abrir URL y **copiar con auto-limpieza** del portapapeles (`expo-clipboard`).
+- **Catálogo de plataformas** (`src/constants/platforms.ts`): apps comunes (Google, Outlook,
+  Instagram…) con icono de marca a color (FontAwesome6 brands) y URL; al elegir una se
+  autocompleta la URL/título, u opción "Personalizada". Logos full-color (gradientes) → Fase 5.
+- **Login/unlock más rápidos:** la Vault Key envuelta viaja en `user_metadata`, así el login
+  evita una llamada extra a `profiles` y el **unlock es offline** (lee la sesión local; solo
+  cuesta Argon2id).
 - **Tests** (Jest): round-trip de `vaultCrypto`. Verificado: `npm test` 32/32, `tsc` OK,
   expo-doctor 21/21.
 - Nota: persistencia **solo local** (sin sync). La sincronización con Supabase es la Fase 4.

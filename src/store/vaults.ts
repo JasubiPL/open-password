@@ -28,6 +28,8 @@ export interface VaultItem {
   url: string;
   notes: string;
   category: string;
+  /** Id de plataforma del catálogo (`platforms.ts`); vacío si es personalizada. */
+  platform: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -35,7 +37,10 @@ export interface VaultItem {
 /** Campos editables de una bóveda. */
 export type VaultInput = Pick<Vault, 'name' | 'icon' | 'color'>;
 /** Campos editables de un item. */
-export type ItemInput = Pick<VaultItem, 'title' | 'username' | 'password' | 'url' | 'notes' | 'category'>;
+export type ItemInput = Pick<
+  VaultItem,
+  'title' | 'username' | 'password' | 'url' | 'notes' | 'category' | 'platform'
+>;
 
 interface VaultsState {
   vaults: Vault[];
@@ -54,7 +59,10 @@ interface VaultsState {
 
 // Campos cifrados de cada registro (lo que va dentro del blob).
 type VaultData = Pick<Vault, 'name' | 'icon' | 'color'>;
-type ItemData = Pick<VaultItem, 'title' | 'username' | 'password' | 'url' | 'notes' | 'category'>;
+type ItemData = Pick<
+  VaultItem,
+  'title' | 'username' | 'password' | 'url' | 'notes' | 'category' | 'platform'
+>;
 
 export const useVaults = create<VaultsState>((set, get) => ({
   vaults: [],
@@ -76,7 +84,14 @@ export const useVaults = create<VaultsState>((set, get) => ({
     });
     const items: VaultItem[] = itemRows.map((r) => {
       const d = decryptRecord<ItemData>(r.data);
-      return { id: r.id, vaultId: r.vault_id, ...d, createdAt: r.created_at, updatedAt: r.updated_at };
+      return {
+        id: r.id,
+        vaultId: r.vault_id,
+        ...d,
+        platform: d.platform ?? '', // compat con items previos sin plataforma
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      };
     });
 
     set({ vaults, items, loaded: true });

@@ -4,6 +4,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
+import { PlatformIcon } from '@/components/PlatformIcon';
 import { useVaults } from '@/store/vaults';
 import { CLIPBOARD_CLEAR_SECONDS, copyWithAutoClear } from '@/lib/clipboard';
 
@@ -102,8 +103,13 @@ export default function ItemDetail() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{item.title || 'Sin título'}</Text>
-        {item.category ? <Text style={styles.category}>{item.category}</Text> : null}
+        <View style={styles.titleRow}>
+          <PlatformIcon platform={item.platform} title={item.title} size={52} />
+          <View style={styles.titleText}>
+            <Text style={styles.title}>{item.title || 'Sin título'}</Text>
+            {item.category ? <Text style={styles.category}>{item.category}</Text> : null}
+          </View>
+        </View>
 
         <View style={styles.card}>
           <Field label="Usuario / email" value={item.username} onCopy={() => copy(item.username, 'Usuario')} />
@@ -130,8 +136,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   content: { padding: 24, gap: 8 },
-  title: { color: Colors.text, fontSize: 26, fontWeight: '700' },
-  category: { color: Colors.accent, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  titleText: { flex: 1, gap: 2 },
+  title: { color: Colors.text, fontSize: 24, fontWeight: '700' },
+  category: { color: Colors.accent, fontSize: 13, fontWeight: '600' },
   card: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
