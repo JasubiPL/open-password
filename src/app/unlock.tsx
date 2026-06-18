@@ -15,7 +15,7 @@ import { TextField } from '@/components/TextField';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/store/session';
-import { isBiometricAvailable, unlockWithBiometrics } from '@/lib/biometric';
+import { isBiometricEnabled, unlockWithBiometrics } from '@/lib/biometric';
 
 /** Enmascara el email: j***@dominio.com */
 function maskEmail(email: string | null): string {
@@ -38,7 +38,7 @@ export default function Unlock() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   useEffect(() => {
-    isBiometricAvailable().then(setBiometricEnabled);
+    isBiometricEnabled().then(setBiometricEnabled);
   }, []);
 
   const onUnlock = async () => {
@@ -61,9 +61,13 @@ export default function Unlock() {
       if (ok) {
         syncUnlocked();
         router.replace('/vaults');
+      } else {
+        // No había clave guardada: deshabilitamos el botón y pedimos contraseña.
+        setBiometricEnabled(false);
+        setError('Biometría no disponible. Desbloqueá con tu contraseña maestra.');
       }
     } catch {
-      setError('No se pudo desbloquear con biometría.');
+      // El usuario canceló o la autenticación falló: silencioso, sigue la contraseña.
     }
   };
 
