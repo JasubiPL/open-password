@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { Colors } from '@/constants/theme';
@@ -65,10 +65,15 @@ export default function Generator() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Generador</Text>
-        <Text style={styles.subtitle}>Contraseñas fuertes, al instante</Text>
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Generador</Text>
+          <Text style={styles.subtitle}>Contraseñas fuertes, al instante</Text>
+        </View>
 
       <View style={styles.display}>
         <ColoredPassword value={password} />
@@ -131,9 +136,10 @@ export default function Generator() {
         />
       </View>
 
-      <View style={styles.footer}>
-        <Button label={copied ? 'Copiada ✓' : 'Copiar contraseña'} onPress={onCopy} />
-      </View>
+        <View style={styles.footer}>
+          <Button label={copied ? 'Copiada ✓' : 'Copiar contraseña'} onPress={onCopy} />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -168,7 +174,8 @@ function OptionRow({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 24 },
+  safe: { flex: 1, backgroundColor: Colors.background },
+  scroll: { paddingHorizontal: 24, paddingBottom: 24, flexGrow: 1 },
   header: { paddingTop: 8, marginBottom: 20, gap: 4 },
   title: { color: Colors.text, fontSize: 30, fontWeight: '700' },
   subtitle: { color: Colors.textMuted, fontSize: 14 },
