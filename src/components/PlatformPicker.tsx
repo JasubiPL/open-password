@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { FontAwesome6, Ionicons } from '@expo/vector-icons';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
-import { PLATFORMS, type Platform } from '@/constants/platforms';
+import { BRANDS, CATEGORIES, type Platform } from '@/constants/platforms';
 
 /**
- * Selector de plataforma común. Permite buscar y elegir una del catálogo o
- * marcar "Personalizada" (sin plataforma). Se abre/cierra en la misma pantalla
- * (no navega), así que el Modal es seguro aquí.
+ * Selector de plataforma. Permite buscar y elegir una app (logo de marca), una
+ * categoría genérica (banco, telecom…), o marcar "Personalizada" (sin plataforma).
+ * Se abre/cierra en la misma pantalla (no navega), así que el Modal es seguro aquí.
  */
 export function PlatformPicker({
   visible,
@@ -21,10 +21,15 @@ export function PlatformPicker({
 }) {
   const [query, setQuery] = useState('');
 
-  const results = useMemo(() => {
+  const sections = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return PLATFORMS;
-    return PLATFORMS.filter((p) => p.name.toLowerCase().includes(q));
+    const match = (p: Platform) => !q || p.name.toLowerCase().includes(q);
+    const apps = BRANDS.filter(match);
+    const cats = CATEGORIES.filter(match);
+    return [
+      ...(apps.length ? [{ title: 'Apps', data: apps }] : []),
+      ...(cats.length ? [{ title: 'Categorías', data: cats }] : []),
+    ];
   }, [query]);
 
   const choose = (platform: Platform | null) => {
@@ -47,7 +52,7 @@ export function PlatformPicker({
           <Ionicons name="search" size={18} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar (Google, Instagram…)"
+            placeholder="Buscar (Google, Banco, Telecom…)"
             placeholderTextColor={Colors.textMuted}
             value={query}
             onChangeText={setQuery}
@@ -57,8 +62,8 @@ export function PlatformPicker({
           />
         </View>
 
-        <FlatList
-          data={results}
+        <SectionList
+          sections={sections}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
@@ -69,10 +74,15 @@ export function PlatformPicker({
               <Text style={styles.rowText}>Personalizada (no está en la lista)</Text>
             </Pressable>
           }
+          renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
           renderItem={({ item }) => (
             <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={() => choose(item)}>
               <View style={[styles.iconBadge, { backgroundColor: item.color + '22' }]}>
-                <FontAwesome6 name={item.icon as keyof typeof FontAwesome6.glyphMap} size={20} color={item.color} />
+                {item.iconSet === 'fa6' ? (
+                  <FontAwesome6 name={item.icon as keyof typeof FontAwesome6.glyphMap} size={20} color={item.color} />
+                ) : (
+                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={item.color} />
+                )}
               </View>
               <Text style={styles.rowText}>{item.name}</Text>
             </Pressable>
@@ -99,7 +109,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   searchInput: { flex: 1, color: Colors.text, fontSize: 15, paddingVertical: 12 },
-  list: { padding: 16, gap: 6 },
+  list: { padding: 16, paddingBottom: 32 },
+  sectionHeader: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginTop: 16,
+    marginBottom: 6,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

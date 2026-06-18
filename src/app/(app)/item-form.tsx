@@ -38,8 +38,8 @@ export default function ItemForm() {
       return;
     }
     setPlatform(p.id);
-    if (!title.trim()) setTitle(p.name);
-    if (!url.trim()) setUrl(p.url); // autocompleta la URL si está vacía
+    if (!title.trim() && p.kind === 'brand') setTitle(p.name);
+    if (p.url && !url.trim()) setUrl(p.url); // autocompleta la URL si la marca la tiene
   };
 
   const onSave = async () => {

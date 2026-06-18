@@ -4,8 +4,9 @@ import { Colors } from '@/constants/theme';
 import { getPlatform } from '@/constants/platforms';
 
 /**
- * Icono para una entrada: logo de marca a color si la plataforma está en el
- * catálogo; si no, la inicial del título sobre un badge con `fallbackColor`.
+ * Icono para una entrada: logo de marca (FontAwesome6) o icono de categoría
+ * (Ionicons) si la plataforma está en el catálogo; si no, la inicial del título
+ * sobre un badge con `fallbackColor`.
  */
 export function PlatformIcon({
   platform,
@@ -24,8 +25,10 @@ export function PlatformIcon({
 
   return (
     <View style={[styles.badge, { width: size, height: size, borderRadius: size * 0.27, backgroundColor: tint + '22' }]}>
-      {known ? (
+      {known?.iconSet === 'fa6' ? (
         <FontAwesome6 name={known.icon as keyof typeof FontAwesome6.glyphMap} size={iconSize} color={tint} />
+      ) : known?.iconSet === 'ion' ? (
+        <Ionicons name={known.icon as keyof typeof Ionicons.glyphMap} size={iconSize} color={tint} />
       ) : title ? (
         <Text style={[styles.initial, { fontSize: iconSize, color: tint }]}>{title.charAt(0).toUpperCase()}</Text>
       ) : (
