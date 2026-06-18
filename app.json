@@ -3,7 +3,9 @@
     "name": "Open Password",
     "slug": "open-password",
     "version": "1.0.0",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/branding/icon.png",
     "scheme": "openpassword",
@@ -54,6 +56,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8a4b9060-eb8b-4768-8ccb-b946359949ac"
+      }
+    },
+    "owner": "jasubip"
   }
 }
