@@ -25,7 +25,7 @@ interface SessionState {
   bootstrap: () => Promise<() => void>;
   /** Refresca `unlocked` desde el estado real de la Vault Key en RAM. */
   syncUnlocked: () => void;
-  register: (email: string, masterPassword: string) => Promise<void>;
+  register: (email: string, masterPassword: string) => Promise<auth.RegisterResult>;
   login: (email: string, masterPassword: string) => Promise<void>;
   unlock: (masterPassword: string) => Promise<void>;
   lock: () => void;
@@ -58,8 +58,11 @@ export const useSession = create<SessionState>((set, get) => ({
   syncUnlocked: () => set({ unlocked: isUnlocked() }),
 
   register: async (email, masterPassword) => {
-    await auth.register(email, masterPassword);
-    set({ status: 'signedIn', email: email.trim().toLowerCase(), unlocked: isUnlocked() });
+    const result = await auth.register(email, masterPassword);
+    if (result === 'unlocked') {
+      set({ status: 'signedIn', email: email.trim().toLowerCase(), unlocked: isUnlocked() });
+    }
+    return result;
   },
 
   login: async (email, masterPassword) => {

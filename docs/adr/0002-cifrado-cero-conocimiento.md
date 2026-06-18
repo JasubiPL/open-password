@@ -31,3 +31,10 @@ pbkdf2, hkdf), `@noble/ciphers` (aes-256-gcm), `expo-crypto` (CSPRNG).
 - ⚠️ La búsqueda debe hacerse en memoria en el dispositivo (el servidor no puede buscar
   dentro del texto cifrado).
 - ⚠️ Argon2id en JS puro es más lento; aceptable porque solo corre al desbloquear.
+- ⚠️ **JS puro bloquea el único hilo de JS de RN.** Argon2id no puede correr fuera del
+  hilo en Expo Go (no hay workers; el `argon2idAsync` de noble cede con microtasks, que no
+  devuelven control a RN). Mitigación actual: coste bajo (~8 MiB / 2 pasadas) para que el
+  bloqueo sea corto + un overlay modal durante el cálculo (el spinner nativo sigue animando)
+  y un `yieldToUI()` para pintarlo antes. Para subir el coste a niveles OWASP sin congelar
+  la UI hará falta un **dev build con Argon2 nativo** (revisar este ADR), guardando los
+  parámetros por usuario en `profiles` para no invalidar cuentas existentes.

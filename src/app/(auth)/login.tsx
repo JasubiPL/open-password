@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { Colors } from '@/constants/theme';
 import { useSession } from '@/store/session';
 
@@ -41,6 +42,7 @@ export default function Login() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <LoadingOverlay visible={loading} message="Iniciando sesión…" />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Iniciar sesión</Text>

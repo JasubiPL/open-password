@@ -10,7 +10,7 @@
  *
  * Estilo Bitwarden: authHash = PBKDF2(masterKey, password) con dominio separado.
  */
-import { argon2id } from '@noble/hashes/argon2.js';
+import { argon2id, argon2idAsync } from '@noble/hashes/argon2.js';
 import { pbkdf2 } from '@noble/hashes/pbkdf2.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { passwordToBytes } from './encoding';
@@ -28,10 +28,16 @@ export interface Argon2Params {
 }
 
 /**
- * Parámetros Argon2id por defecto. ~64 MiB / 3 pasadas: balance razonable para
- * dispositivos móviles dado que solo corre al desbloquear (ADR 0002).
+ * Parámetros Argon2id por defecto.
+ *
+ * Argon2id en JS puro corre en el ÚNICO hilo de JS de React Native y lo bloquea
+ * mientras dura (no hay workers en Expo Go; ver ADR 0002). Por eso elegimos un
+ * coste deliberadamente bajo (~8 MiB / 2 pasadas) para que el bloqueo sea corto
+ * (~1-2 s en gama media) y la app no dispare un ANR. Es más débil que el mínimo
+ * OWASP (~19 MiB): el camino para subirlo es un dev build con Argon2 nativo,
+ * guardando los parámetros por usuario en `profiles` para no romper cuentas.
  */
-export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 3, m: 64 * 1024, p: 4, dkLen: 32 };
+export const DEFAULT_ARGON2_PARAMS: Argon2Params = { t: 2, m: 8192, p: 1, dkLen: 32 };
 
 /**
  * Parámetros Argon2id activos. Por defecto los de producción; se pueden ajustar
@@ -61,6 +67,24 @@ export function deriveMasterKey(
   params: Argon2Params = activeArgon2Params,
 ): Uint8Array {
   return argon2id(passwordToBytes(password), salt, {
+    t: params.t,
+    m: params.m,
+    p: params.p,
+    dkLen: params.dkLen,
+  });
+}
+
+/**
+ * Versión asíncrona de `deriveMasterKey`. Cede el hilo de JS periódicamente
+ * para no congelar la UI mientras Argon2id corre. Usar siempre desde la app;
+ * la versión síncrona se reserva para tests/uso fuera de la UI.
+ */
+export function deriveMasterKeyAsync(
+  password: string,
+  salt: Uint8Array,
+  params: Argon2Params = activeArgon2Params,
+): Promise<Uint8Array> {
+  return argon2idAsync(passwordToBytes(password), salt, {
     t: params.t,
     m: params.m,
     p: params.p,
