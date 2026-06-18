@@ -3,10 +3,11 @@
     "name": "Open Password",
     "slug": "open-password",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
     "orientation": "portrait",
     "icon": "./assets/branding/icon.png",
     "scheme": "openpassword",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "primaryColor": "#2DD4BF",
     "ios": {
       "supportsTablet": true,
@@ -14,6 +15,7 @@
     },
     "android": {
       "package": "com.jasubip.openpassword",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-icon.png",
         "backgroundColor": "#0E1116"
