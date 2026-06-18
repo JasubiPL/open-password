@@ -171,11 +171,17 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - Pendiente menor: lint (ESLint/Prettier) y revisar fonts material-symbols que entran al
   bundle (~5MB) por defecto.
 
-### Fase 1 — Núcleo de cripto (`src/crypto/`)
-- `kdf.ts`: derivar Master Key (Argon2id) y auth hash.
-- `cipher.ts`: helpers `encrypt`/`decrypt` con AES-256-GCM (+ IV aleatorio).
-- `keyManager.ts`: generar/abrir Vault Key, mantenerla en RAM, integrar `expo-secure-store`.
-- **Tests unitarios** del round-trip cifrar→descifrar y derivación determinista.
+### Fase 1 — Núcleo de cripto (`src/crypto/`) ✅ (hecho)
+- `kdf.ts`: `deriveMasterKey` (Argon2id, ~64 MiB/3 pasadas) y `deriveAuthHash` (PBKDF2) +
+  `generateSalt`.
+- `cipher.ts`: `encrypt`/`decrypt` de bytes y string con AES-256-GCM (+ IV aleatorio de
+  12 bytes y AAD opcional); formato serializado `base64(iv || ciphertext+tag)`.
+- `keyManager.ts`: generar/envolver/desenvolver la Vault Key, mantenerla en RAM e
+  integrar `expo-secure-store` (biometría).
+- `encoding.ts` (base64/utf8/hex) y `random.ts` (CSPRNG `expo-crypto`) de apoyo.
+- **Tests unitarios** (18) con Jest: round-trip cifrar→descifrar, derivación determinista,
+  autenticación GCM y manejo de la Vault Key. Verificado: `npm test`, `tsc` OK,
+  expo-doctor 21/21.
 
 ### Fase 2 — Auth + onboarding
 - Pantallas registro/login con Supabase Auth usando el auth hash derivado.
