@@ -194,12 +194,17 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
 - **Store de sesión** (`src/store/session.ts`, Zustand): ejes `status` (sesión) y `unlocked`
   (Vault Key en RAM); bootstrap + suscripción a `onAuthStateChange`.
 - **Biometría** (`src/lib/biometric.ts`, `expo-local-authentication` + secure store).
-- **Migración** `supabase/migrations/0001_profiles.sql`: tabla `profiles` (salt +
-  `protected_vault_key`), RLS por `auth.uid()` y RPC `get_salt_by_email` (prelogin; salt no
-  es secreto, permite enumeración — aceptado para el MVP, estilo Bitwarden).
-- **Pantallas** (Expo Router): `onboarding`, `register` (con medidor de fuerza y aviso de
-  no-recuperación), `login`, `unlock` (maestra + biometría), placeholder `vaults` y guards
-  por grupo (`(auth)` / `(app)`).
+- **Migraciones** `supabase/migrations/`: `0001_profiles.sql` (tabla `profiles` salt +
+  `protected_vault_key`, RLS por `auth.uid()`, RPC `get_salt_by_email`; salt no es secreto,
+  permite enumeración — aceptado para el MVP, estilo Bitwarden) y
+  `0002_prelogin_metadata_fallback.sql` (el prelogin lee el salt también de `user_metadata`).
+- **Confirmación de email:** el registro guarda `salt` + Vault Key cifrada en `user_metadata`,
+  así sobreviven si el proyecto exige confirmar; el perfil se materializa en el primer login.
+  `register` devuelve `'unlocked'` o `'emailConfirmationRequired'`.
+- **Pantallas** (Expo Router): `onboarding`, `register` (medidor de fuerza + aviso de
+  no-recuperación), `verify-email` (cuando hay que confirmar; con reenvío), `login`,
+  `unlock` (maestra + biometría), placeholder `vaults` y guards por grupo (`(auth)`/`(app)`).
+  Operaciones con KDF muestran un `LoadingOverlay` (el hilo de JS se bloquea; ver ADR 0002).
 - **Tests** (Jest): orquestación register→login→unlock recupera la misma Vault Key, fallos
   con contraseña/email incorrectos, y medidor de fuerza. `configureArgon2Params` permite
   acelerar Argon2 en tests. Verificado: `npm test` 26/26, `tsc` OK, expo-doctor 21/21.

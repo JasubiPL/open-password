@@ -68,10 +68,22 @@ function mapAuthError(error: { message?: string }): Error {
   return new Error(error.message ?? 'Error de autenticación.');
 }
 
-/** Crea la cuenta, el perfil cifrado y desbloquea la bóveda en esta sesión. */
-export async function register(email: string, masterPassword: string): Promise<void> {
+/** Resultado del registro: bóveda lista, o falta confirmar el email. */
+export type RegisterResult = 'unlocked' | 'emailConfirmationRequired';
+
+/**
+ * Crea la cuenta y el perfil cifrado.
+ *
+ * El `salt` y la Vault Key envuelta se guardan SIEMPRE en `user_metadata` al
+ * registrarse (no requiere sesión): así, si el proyecto exige confirmar el email,
+ * los datos no se pierden y el perfil se materializa en el primer login.
+ * Si hay sesión inmediata (confirmación desactivada), se crea el perfil y se
+ * desbloquea la bóveda en el acto.
+ */
+export async function register(email: string, masterPassword: string): Promise<RegisterResult> {
   const normalizedEmail = normalizeEmail(email);
   const salt = generateSalt();
+  const saltB64 = bytesToBase64(salt);
   await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
   const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
   const vaultKey = generateVaultKey();
@@ -80,27 +92,26 @@ export async function register(email: string, masterPassword: string): Promise<v
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password: authHashToPassword(masterKey, masterPassword),
+    // user_metadata: salt (no secreto) + Vault Key cifrada (segura aunque se exponga).
+    options: { data: { salt: saltB64, protected_vault_key: protectedVaultKey } },
   });
   if (error) throw mapAuthError(error);
 
-  // El flujo cero-conocimiento necesita sesión inmediata para crear el perfil
-  // cifrado (RLS exige auth.uid()). Si no hay sesión, el proyecto tiene activada
-  // la confirmación de email, que este flujo no soporta.
+  // Sin sesión → el proyecto exige confirmar el email. Los datos quedan en
+  // user_metadata; el perfil se crea al confirmar e iniciar sesión.
   if (!data.session || !data.user?.id) {
-    throw new Error(
-      'Tu proyecto de Supabase requiere confirmar el email. Desactivá "Confirm email" ' +
-        'en Authentication → Providers → Email para poder crear la bóveda.',
-    );
+    return 'emailConfirmationRequired';
   }
 
-  const { error: profileError } = await supabase.from(PROFILES_TABLE).insert({
-    user_id: data.user.id,
-    salt: bytesToBase64(salt),
-    protected_vault_key: protectedVaultKey,
-  });
-  if (profileError) throw profileError;
-
+  await upsertProfile(data.user.id, saltB64, protectedVaultKey);
   setVaultKey(vaultKey);
+  return 'unlocked';
+}
+
+/** Reenvía el email de confirmación de registro. */
+export async function resendConfirmationEmail(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({ type: 'signup', email: normalizeEmail(email) });
+  if (error) throw mapAuthError(error);
 }
 
 /** Devuelve el salt (base64) de un email vía RPC prelogin, o null si no existe. */
@@ -123,13 +134,16 @@ export async function login(email: string, masterPassword: string): Promise<void
   await yieldToUI(); // deja pintar el overlay antes del bloqueo de Argon2id
   const masterKey = await deriveMasterKeyAsync(masterPassword, salt);
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
     password: authHashToPassword(masterKey, masterPassword),
   });
   if (error) throw mapAuthError(error);
 
-  const profile = await fetchProfile();
+  // Cuentas creadas con confirmación de email aún no tienen fila en `profiles`
+  // (su salt/Vault Key viven en user_metadata): la materializamos en el primer
+  // login para que el resto de la app y el prelogin de otros dispositivos funcionen.
+  const profile = await ensureProfile(data.user, saltB64);
   const vaultKey = unprotectVaultKey(profile.protected_vault_key, masterKey);
   setVaultKey(vaultKey);
 }
@@ -154,13 +168,53 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
 }
 
-/** Lee el perfil (salt + Vault Key envuelta) del usuario autenticado. */
-async function fetchProfile(): Promise<ProfileRow> {
+/** Lee el perfil (salt + Vault Key envuelta) del usuario autenticado, o null. */
+async function fetchProfileOrNull(): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from(PROFILES_TABLE)
     .select('salt, protected_vault_key')
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error('Perfil no encontrado.');
-  return data as ProfileRow;
+  return (data as ProfileRow | null) ?? null;
+}
+
+/** Lee el perfil del usuario autenticado; lanza si no existe. */
+async function fetchProfile(): Promise<ProfileRow> {
+  const profile = await fetchProfileOrNull();
+  if (!profile) throw new Error('Perfil no encontrado.');
+  return profile;
+}
+
+/** Crea o actualiza el perfil cifrado del usuario. */
+async function upsertProfile(userId: string, saltB64: string, protectedVaultKey: string): Promise<void> {
+  const { error } = await supabase
+    .from(PROFILES_TABLE)
+    .upsert(
+      { user_id: userId, salt: saltB64, protected_vault_key: protectedVaultKey },
+      { onConflict: 'user_id' },
+    );
+  if (error) throw error;
+}
+
+interface AuthUser {
+  id: string;
+  user_metadata?: { salt?: string; protected_vault_key?: string };
+}
+
+/**
+ * Garantiza que exista el perfil en `profiles`. Si falta (cuenta creada con
+ * confirmación de email), lo materializa desde `user_metadata`.
+ */
+async function ensureProfile(user: AuthUser | null | undefined, saltB64: string): Promise<ProfileRow> {
+  const existing = await fetchProfileOrNull();
+  if (existing) return existing;
+
+  const meta = user?.user_metadata ?? {};
+  const protectedVaultKey = meta.protected_vault_key;
+  const metaSalt = meta.salt ?? saltB64;
+  if (!user?.id || !protectedVaultKey) {
+    throw new Error('Perfil no encontrado y faltan datos para recrearlo.');
+  }
+  await upsertProfile(user.id, metaSalt, protectedVaultKey);
+  return { salt: metaSalt, protected_vault_key: protectedVaultKey };
 }

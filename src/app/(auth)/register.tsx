@@ -38,8 +38,12 @@ export default function Register() {
     setError(null);
     setLoading(true);
     try {
-      await registerUser(email, password);
-      router.replace('/vaults');
+      const result = await registerUser(email, password);
+      if (result === 'emailConfirmationRequired') {
+        router.replace({ pathname: '/verify-email', params: { email: email.trim().toLowerCase() } });
+      } else {
+        router.replace('/vaults');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo crear la cuenta.');
     } finally {
