@@ -7,6 +7,7 @@ import { BrandSignature } from '@/components/BrandSignature';
 import { Colors } from '@/constants/theme';
 import { getVaultKey } from '@/crypto';
 import { useSession } from '@/store/session';
+import { AUTO_LOCK_OPTIONS, usePreferences } from '@/store/preferences';
 import {
   disableBiometricUnlock,
   enableBiometricUnlock,
@@ -14,7 +15,7 @@ import {
   isBiometricEnabled,
 } from '@/lib/biometric';
 
-const SOON = () => Alert.alert('Próximamente', 'Esta opción llega en la Fase 6 (pulido).');
+const SOON = () => Alert.alert('Próximamente', 'Esta opción llega más adelante.');
 
 export default function Settings() {
   const router = useRouter();
@@ -22,8 +23,23 @@ export default function Settings() {
   const logout = useSession((s) => s.logout);
   const lock = useSession((s) => s.lock);
 
+  const autoLockMinutes = usePreferences((s) => s.autoLockMinutes);
+  const setAutoLockMinutes = usePreferences((s) => s.setAutoLockMinutes);
+  const blockScreenshots = usePreferences((s) => s.blockScreenshots);
+  const setBlockScreenshots = usePreferences((s) => s.setBlockScreenshots);
+
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioEnabled, setBioEnabled] = useState(false);
+
+  const autoLockLabel =
+    AUTO_LOCK_OPTIONS.find((o) => o.minutes === autoLockMinutes)?.label ?? `${autoLockMinutes} min`;
+
+  const onPickAutoLock = () => {
+    Alert.alert('Auto-bloqueo', 'Bloquear la bóveda tras estar en segundo plano:', [
+      ...AUTO_LOCK_OPTIONS.map((o) => ({ text: o.label, onPress: () => setAutoLockMinutes(o.minutes) })),
+      { text: 'Cancelar', style: 'cancel' as const },
+    ]);
+  };
 
   useEffect(() => {
     isBiometricAvailable().then(setBioAvailable);
@@ -88,24 +104,27 @@ export default function Settings() {
               ios_backgroundColor={Colors.surfaceAlt}
             />
           </Row>
-          <Row icon="time-outline" label="Auto-bloqueo" onPress={SOON} divider>
-            <Text style={styles.value}>1 min ›</Text>
+          <Row icon="time-outline" label="Auto-bloqueo" onPress={onPickAutoLock} divider>
+            <Text style={styles.value}>{autoLockLabel} ›</Text>
           </Row>
-          <Row icon="lock-closed-outline" label="Cambiar contraseña maestra" onPress={SOON} divider>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+          <Row icon="eye-off-outline" label="Bloquear capturas" divider>
+            <Switch
+              value={blockScreenshots}
+              onValueChange={setBlockScreenshots}
+              trackColor={{ false: Colors.surfaceAlt, true: Colors.accent }}
+              thumbColor={Colors.text}
+              ios_backgroundColor={Colors.surfaceAlt}
+            />
           </Row>
           <Row icon="phone-portrait-outline" label="Bloquear ahora" onPress={lock} divider>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
           </Row>
         </View>
 
-        <Text style={styles.section}>DATOS · APARIENCIA</Text>
+        <Text style={styles.section}>GENERAL</Text>
         <View style={styles.card}>
           <Row icon="download-outline" label="Importar CSV" onPress={SOON}>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-          </Row>
-          <Row icon="contrast-outline" label="Tema" onPress={SOON} divider>
-            <Text style={styles.value}>Oscuro ›</Text>
           </Row>
           <Row icon="information-circle-outline" label="Acerca de" onPress={() => router.push('/about')} divider>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />

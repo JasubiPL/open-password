@@ -316,9 +316,15 @@ cero-conocimiento — el server no puede buscar dentro del texto cifrado).
   - Firma discreta *"JasubiP® 2015–2026"* en Login, Desbloqueo y pie de Ajustes. Componente
     reutilizable `BrandSignature`.
 
-### Fase 6 — Pulido
-- Auto-lock por inactividad, ocultar contraseñas por defecto, bloquear screenshots en
-  pantallas sensibles. Tema claro/oscuro. README final + capturas para el repo público.
+### Fase 6 — Pulido ✅ (hecho)
+- **Auto-bloqueo ✅** (`SecurityGuards` + `store/preferences.ts`): al volver del segundo plano,
+  si pasó más del umbral configurado (Al salir / 1 / 5 / 15 min), se limpia la Vault Key de RAM
+  y la app vuelve a pedir desbloqueo. Preferencia persistida en AsyncStorage.
+- **Bloqueo de capturas ✅** (`expo-screen-capture`, toggle en Ajustes): FLAG_SECURE en Android.
+- **Contraseñas ocultas por defecto ✅** (detalle de entrada arranca enmascarado).
+- **README final ✅**.
+- **Tema:** la app es **dark-only por decisión de diseño** (todo el handoff es oscuro); no hay
+  modo claro y no se considera deuda. Capturas para el repo quedan como tarea manual.
 
 ---
 
