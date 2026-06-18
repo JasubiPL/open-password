@@ -10,6 +10,7 @@ import { getDb, clearDatabase } from '@/db/database';
 import { decryptRecord, encryptRecord } from '@/lib/vaultCrypto';
 import { newId } from '@/lib/id';
 import { syncNow } from '@/lib/sync';
+import { notifyKeysSynced } from '@/lib/notifications';
 
 /** Empuja cambios locales al servidor en segundo plano (best-effort, sin red → no-op). */
 function pushInBackground(): void {
@@ -52,6 +53,12 @@ interface VaultsState {
   vaults: Vault[];
   items: VaultItem[];
   loaded: boolean;
+  /** Sincronización en curso. */
+  syncing: boolean;
+  /** Timestamp (ms) de la última sync exitosa, o null. */
+  lastSyncedAt: number | null;
+  /** Resultado del último intento: true ok, false falló (sin red), null sin intentar. */
+  lastSyncOk: boolean | null;
 
   load: () => Promise<void>;
   /** Sincroniza con Supabase (push + pull) y recarga la vista descifrada. */
@@ -76,6 +83,9 @@ export const useVaults = create<VaultsState>((set, get) => ({
   vaults: [],
   items: [],
   loaded: false,
+  syncing: false,
+  lastSyncedAt: null,
+  lastSyncOk: null,
 
   load: async () => {
     const db = await getDb();
@@ -106,12 +116,24 @@ export const useVaults = create<VaultsState>((set, get) => ({
   },
 
   sync: async () => {
-    const result = await syncNow();
-    // Solo recargamos si el pull trajo cambios remotos (evita parpadeos).
-    if (result.pulled > 0) await get().load();
+    if (get().syncing) return; // evita syncs concurrentes
+    set({ syncing: true });
+    try {
+      const result = await syncNow();
+      // Solo recargamos si el pull trajo cambios remotos (evita parpadeos).
+      if (result.pulled > 0) await get().load();
+      if (!result.skipped) set({ lastSyncedAt: Date.now(), lastSyncOk: true });
+      // Avisamos cuando se subieron claves locales pendientes (p. ej. al reconectar).
+      if (result.pushed > 0) void notifyKeysSynced(result.pushed);
+    } catch {
+      set({ lastSyncOk: false }); // sin red / error: queda pendiente para el próximo intento
+    } finally {
+      set({ syncing: false });
+    }
   },
 
-  reset: () => set({ vaults: [], items: [], loaded: false }),
+  reset: () =>
+    set({ vaults: [], items: [], loaded: false, syncing: false, lastSyncedAt: null, lastSyncOk: null }),
 
   createVault: async (input) => {
     const db = await getDb();

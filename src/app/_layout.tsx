@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/theme';
 import { SecurityGuards } from '@/components/SecurityGuards';
+import { setupNotifications } from '@/lib/notifications';
 import { useSession } from '@/store/session';
 import { usePreferences } from '@/store/preferences';
 
@@ -11,6 +12,7 @@ export default function RootLayout() {
   const loadPrefs = usePreferences((s) => s.load);
 
   useEffect(() => {
+    setupNotifications(); // muestra las notificaciones también en foreground
     void loadPrefs();
     let unsubscribe: (() => void) | undefined;
     bootstrap().then((fn) => {
