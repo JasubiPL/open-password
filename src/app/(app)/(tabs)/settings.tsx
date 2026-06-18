@@ -121,13 +121,10 @@ export default function Settings() {
           </Row>
         </View>
 
-        <Text style={styles.section}>DATOS · APARIENCIA</Text>
+        <Text style={styles.section}>GENERAL</Text>
         <View style={styles.card}>
           <Row icon="download-outline" label="Importar CSV" onPress={SOON}>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-          </Row>
-          <Row icon="contrast-outline" label="Tema" onPress={SOON} divider>
-            <Text style={styles.value}>Oscuro ›</Text>
           </Row>
           <Row icon="information-circle-outline" label="Acerca de" onPress={() => router.push('/about')} divider>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />

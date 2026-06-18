@@ -24,7 +24,7 @@ Nace para reemplazar el clásico Excel de contraseñas por algo seguro y cómodo
 - 🔎 **Búsqueda global** y **logos de marca** en cada entrada.
 - 🛡️ **Bloqueo de capturas** de pantalla en datos sensibles.
 
-> Roadmap: importar desde Excel (CSV) y tema claro están planificados.
+> Roadmap: importar desde Excel (CSV). La app es **dark-only** por diseño.
 
 ## Stack
 Expo + React Native (TypeScript) · Supabase (Postgres + Auth + RLS) · cripto en JS puro
