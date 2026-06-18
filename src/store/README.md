@@ -1,6 +1,7 @@
 # `src/store`
 
-Estado global con Zustand. Pendiente — **Fase 2+**.
+Estado global con Zustand.
 
-- `session.ts` — sesión y claves en memoria (Master/Vault Key), bloqueo/desbloqueo.
-- `vaults.ts` — bóvedas e items descifrados en memoria.
+- `session.ts` — sesión de Supabase y estado de bloqueo (`status` + `unlocked`); acciones
+  register/login/unlock/lock/logout. **Fase 2.**
+- `vaults.ts` — bóvedas e items descifrados en memoria. Pendiente — **Fase 3.**

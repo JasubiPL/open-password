@@ -1,56 +1,14 @@
-import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { Redirect } from 'expo-router';
+import { Splash } from '@/components/Splash';
+import { useSession } from '@/store/session';
 
-export default function Home() {
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Image
-          source={require('@/assets/branding/splash-icon.png')}
-          style={styles.logo}
-          contentFit="contain"
-        />
-        <Text style={styles.title}>Open Password</Text>
-        <Text style={styles.subtitle}>
-          Gestor de contraseñas cero-conocimiento
-        </Text>
-      </View>
+/** Punto de arranque: decide a dónde ir según la sesión y el estado de bloqueo. */
+export default function Index() {
+  const status = useSession((s) => s.status);
+  const unlocked = useSession((s) => s.unlocked);
 
-      <Text style={styles.footer}>JasubiP® 2015–2026</Text>
-    </SafeAreaView>
-  );
+  if (status === 'loading') return <Splash />;
+  if (status === 'signedOut') return <Redirect href="/onboarding" />;
+  if (!unlocked) return <Redirect href="/unlock" />;
+  return <Redirect href="/vaults" />;
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  logo: {
-    width: 140,
-    height: 140,
-  },
-  title: {
-    color: Colors.text,
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: Colors.textMuted,
-    fontSize: 15,
-  },
-  footer: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    textAlign: 'center',
-    paddingBottom: 16,
-  },
-});

@@ -5,6 +5,8 @@
   "dependencies": {
     "@noble/ciphers": "^2.2.0",
     "@noble/hashes": "^2.2.0",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "^2.108.2",
     "expo": "^56.0.0",
     "expo-constants": "~56.0.18",
     "expo-crypto": "~56.0.4",
@@ -12,6 +14,7 @@
     "expo-font": "~56.0.7",
     "expo-image": "~56.0.11",
     "expo-linking": "~56.0.14",
+    "expo-local-authentication": "~56.0.4",
     "expo-router": "~56.2.11",
     "expo-secure-store": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
@@ -25,8 +28,10 @@
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
+    "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.8.3"
+    "react-native-worklets": "0.8.3",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@react-native/jest-preset": "^0.86.0",
@@ -52,6 +57,9 @@
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
     ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
     "testMatch": [
       "<rootDir>/src/**/__tests__/**/*.test.ts"
     ],
