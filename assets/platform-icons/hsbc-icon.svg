@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" role="img" aria-label="HSBC logo symbol">
+  <title>HSBC logo symbol</title>
+  <g fill="#E00022">
+    <polygon points="0,150 150,0 150,300"/>
+    <polygon points="150,0 450,0 300,150"/>
+    <polygon points="150,300 450,300 300,150"/>
+    <polygon points="450,0 600,150 450,300"/>
+  </g>
+</svg>

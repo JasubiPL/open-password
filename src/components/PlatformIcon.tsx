@@ -1,7 +1,9 @@
 import { FontAwesome6, Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { getPlatform } from '@/constants/platforms';
+import { LOGO_COVER, LOGO_FILL, RASTER_LOGOS, SVG_LOGOS } from '@/constants/platformLogos';
 
 /** Luminancia relativa aproximada (0..1) de un color hex. */
 function luminance(hex: string): number {
@@ -39,6 +41,31 @@ export function PlatformIcon({
   const known = getPlatform(platform);
   const iconSize = Math.round(size * 0.52);
   const radius = size * 0.27;
+
+  if (known?.iconSet === 'logo') {
+    const Logo = SVG_LOGOS[known.icon];
+    const raster = RASTER_LOGOS[known.icon];
+    // Logos que ya traen fondo: se dibujan a sangre sobre un tile de su mismo color.
+    const fillBg = LOGO_FILL[known.icon];
+    const cover = !!LOGO_COVER[known.icon];
+    const logoSize = fillBg ? size : Math.round(size * 0.62);
+    return (
+      <View
+        style={[
+          styles.badge,
+          { width: size, height: size, borderRadius: radius, overflow: 'hidden', backgroundColor: fillBg ?? '#FFFFFF' },
+        ]}
+      >
+        {Logo ? (
+          <Logo width={logoSize} height={logoSize} preserveAspectRatio={cover ? 'xMidYMid slice' : undefined} />
+        ) : raster ? (
+          <Image source={raster} style={{ width: logoSize, height: logoSize }} contentFit={fillBg ? 'cover' : 'contain'} />
+        ) : (
+          <Text style={[styles.initial, { fontSize: iconSize, color: known.color }]}>{known.name.charAt(0)}</Text>
+        )}
+      </View>
+    );
+  }
 
   if (known?.kind === 'brand' && known.iconSet === 'fa6') {
     return (
