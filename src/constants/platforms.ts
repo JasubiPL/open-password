@@ -96,6 +96,7 @@ export const CATEGORIES: Platform[] = [
   { id: 'cat-streaming', name: 'Streaming / TV', icon: 'tv', iconSet: 'ion', color: '#E50914', kind: 'category' },
   { id: 'cat-shopping', name: 'Compras', icon: 'cart', iconSet: 'ion', color: '#E3742F', kind: 'category' },
   { id: 'cat-work', name: 'Trabajo', icon: 'briefcase', iconSet: 'ion', color: '#A371F7', kind: 'category' },
+  { id: 'cat-dev', name: 'Development', icon: 'code-slash', iconSet: 'ion', color: '#58A6FF', kind: 'category' },
   { id: 'cat-social', name: 'Redes sociales', icon: 'people', iconSet: 'ion', color: '#DB61A2', kind: 'category' },
   { id: 'cat-email', name: 'Correo', icon: 'mail', iconSet: 'ion', color: '#58A6FF', kind: 'category' },
   { id: 'cat-education', name: 'Educación', icon: 'school', iconSet: 'ion', color: '#D29922', kind: 'category' },
