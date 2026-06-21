@@ -1,7 +1,9 @@
 import { FontAwesome6, Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { getPlatform } from '@/constants/platforms';
+import { RASTER_LOGOS, SVG_LOGOS } from '@/constants/platformLogos';
 
 /** Luminancia relativa aproximada (0..1) de un color hex. */
 function luminance(hex: string): number {
@@ -39,6 +41,23 @@ export function PlatformIcon({
   const known = getPlatform(platform);
   const iconSize = Math.round(size * 0.52);
   const radius = size * 0.27;
+
+  if (known?.iconSet === 'logo') {
+    const Logo = SVG_LOGOS[known.icon];
+    const raster = RASTER_LOGOS[known.icon];
+    const logoSize = Math.round(size * 0.62);
+    return (
+      <View style={[styles.badge, styles.brandTile, { width: size, height: size, borderRadius: radius }]}>
+        {Logo ? (
+          <Logo width={logoSize} height={logoSize} />
+        ) : raster ? (
+          <Image source={raster} style={{ width: logoSize, height: logoSize }} contentFit="contain" />
+        ) : (
+          <Text style={[styles.initial, { fontSize: iconSize, color: known.color }]}>{known.name.charAt(0)}</Text>
+        )}
+      </View>
+    );
+  }
 
   if (known?.kind === 'brand' && known.iconSet === 'fa6') {
     return (

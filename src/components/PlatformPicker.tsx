@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { FontAwesome6, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
-import { BRANDS, CATEGORIES, type Platform } from '@/constants/platforms';
+import { BRANDS, CATEGORIES, LOGOS, type Platform } from '@/constants/platforms';
+import { PlatformIcon } from './PlatformIcon';
 
 /**
  * Selector de plataforma. Permite buscar y elegir una app (logo de marca), una
@@ -24,7 +25,7 @@ export function PlatformPicker({
   const sections = useMemo(() => {
     const q = query.trim().toLowerCase();
     const match = (p: Platform) => !q || p.name.toLowerCase().includes(q);
-    const apps = BRANDS.filter(match);
+    const apps = [...BRANDS, ...LOGOS].filter(match);
     const cats = CATEGORIES.filter(match);
     return [
       ...(apps.length ? [{ title: 'Apps', data: apps }] : []),
@@ -77,13 +78,7 @@ export function PlatformPicker({
           renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
           renderItem={({ item }) => (
             <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={() => choose(item)}>
-              <View style={[styles.iconBadge, { backgroundColor: item.color + '22' }]}>
-                {item.iconSet === 'fa6' ? (
-                  <FontAwesome6 name={item.icon as keyof typeof FontAwesome6.glyphMap} size={20} color={item.color} />
-                ) : (
-                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={20} color={item.color} />
-                )}
-              </View>
+              <PlatformIcon platform={item.id} size={40} />
               <Text style={styles.rowText}>{item.name}</Text>
             </Pressable>
           )}

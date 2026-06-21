@@ -1,13 +1,11 @@
 /**
  * Catálogo para autocompletar entradas:
- *  - `brand`: apps con logo de marca (FontAwesome6 brands) + URL de login.
- *  - `category`: iconos genéricos (Ionicons) para servicios sin logo propio
- *    (bancos, telecom, gobierno…), p. ej. fintech MX que no están en el set.
- *
- * Los logos full-color y la cobertura de marcas custom (Izzi, Bitso, BBVA…)
- * quedan para la Fase 5. Por ahora: marcas que existan en FontAwesome + categorías.
+ *  - `brand` + `fa6`: apps con logo de marca de FontAwesome6 + URL de login.
+ *  - `brand` + `logo`: logos full-color custom (SVG/PNG en `assets/platform-icons`,
+ *    ver `platformLogos.tsx`), p. ej. marcas MX que no están en FontAwesome.
+ *  - `category` + `ion`: iconos genéricos (Ionicons) para servicios sin logo propio.
  */
-export type IconSet = 'fa6' | 'ion';
+export type IconSet = 'fa6' | 'ion' | 'logo';
 
 export interface Platform {
   id: string;
@@ -49,6 +47,46 @@ export const BRANDS: Platform[] = [
   { id: 'dropbox', name: 'Dropbox', icon: 'dropbox', iconSet: 'fa6', color: '#0061FF', url: 'https://dropbox.com/login', kind: 'brand' },
 ];
 
+/**
+ * Logos full-color custom (`iconSet: 'logo'`). El `icon` es la clave del registro
+ * en `platformLogos.tsx`. El `color` se usa solo como tinte de acento (no afecta
+ * al logo, que se dibuja con sus propios colores sobre tile blanco).
+ */
+export const LOGOS: Platform[] = [
+  // Global
+  { id: 'netflix', name: 'Netflix', icon: 'netflix', iconSet: 'logo', color: '#E50914', url: 'https://www.netflix.com/login', kind: 'brand' },
+  { id: 'disney-plus', name: 'Disney+', icon: 'disney-plus', iconSet: 'logo', color: '#113CCF', url: 'https://www.disneyplus.com', kind: 'brand' },
+  { id: 'hbo-max', name: 'HBO Max', icon: 'hbo-max', iconSet: 'logo', color: '#5822B4', url: 'https://www.max.com', kind: 'brand' },
+  { id: 'gmail', name: 'Gmail', icon: 'gmail', iconSet: 'logo', color: '#EA4335', url: 'https://mail.google.com', kind: 'brand' },
+  { id: 'outlook-web', name: 'Outlook (Web)', icon: 'outlook-web', iconSet: 'logo', color: '#0078D4', url: 'https://outlook.live.com', kind: 'brand' },
+  { id: 'playstation', name: 'PlayStation', icon: 'playstation', iconSet: 'logo', color: '#0070D1', url: 'https://www.playstation.com', kind: 'brand' },
+  { id: 'xbox', name: 'Xbox', icon: 'xbox', iconSet: 'logo', color: '#107C10', url: 'https://account.xbox.com', kind: 'brand' },
+  { id: 'nintendo', name: 'Nintendo', icon: 'nintendo', iconSet: 'logo', color: '#E60012', url: 'https://accounts.nintendo.com', kind: 'brand' },
+  { id: 'revolut', name: 'Revolut', icon: 'revolut', iconSet: 'logo', color: '#0066FF', url: 'https://www.revolut.com', kind: 'brand' },
+  { id: 'supabase', name: 'Supabase', icon: 'supabase', iconSet: 'logo', color: '#3ECF8E', url: 'https://supabase.com/dashboard/sign-in', kind: 'brand' },
+  { id: 'openai', name: 'OpenAI / ChatGPT', icon: 'openai', iconSet: 'logo', color: '#10A37F', url: 'https://chatgpt.com/auth/login', kind: 'brand' },
+  { id: 'claude', name: 'Claude', icon: 'claude', iconSet: 'logo', color: '#D97757', url: 'https://claude.ai/login', kind: 'brand' },
+  { id: 'gemini', name: 'Gemini', icon: 'gemini', iconSet: 'logo', color: '#1BA1E3', url: 'https://gemini.google.com', kind: 'brand' },
+  { id: 'udemy', name: 'Udemy', icon: 'udemy', iconSet: 'logo', color: '#A435F0', url: 'https://www.udemy.com/join/login-popup/', kind: 'brand' },
+  { id: 'platzi', name: 'Platzi', icon: 'platzi', iconSet: 'logo', color: '#98CA3F', url: 'https://platzi.com/login', kind: 'brand' },
+  { id: 'linux', name: 'Linux', icon: 'linux', iconSet: 'logo', color: '#FCC624', kind: 'brand' },
+  { id: 'openclaw', name: 'OpenClaw', icon: 'openclaw', iconSet: 'logo', color: '#00E5CC', kind: 'brand' },
+  // México
+  { id: 'bbva', name: 'BBVA', icon: 'bbva', iconSet: 'logo', color: '#004481', url: 'https://www.bbva.mx', kind: 'brand' },
+  { id: 'hsbc', name: 'HSBC', icon: 'hsbc', iconSet: 'logo', color: '#DB0011', url: 'https://www.hsbc.com.mx', kind: 'brand' },
+  { id: 'stori', name: 'Stori', icon: 'stori', iconSet: 'logo', color: '#00C389', url: 'https://www.storicard.com', kind: 'brand' },
+  { id: 'bitso', name: 'Bitso', icon: 'bitso', iconSet: 'logo', color: '#14CABF', url: 'https://bitso.com/login', kind: 'brand' },
+  { id: 'mercado-pago', name: 'Mercado Pago', icon: 'mercado-pago', iconSet: 'logo', color: '#00B1EA', url: 'https://www.mercadopago.com.mx', kind: 'brand' },
+  { id: 'mercado-libre', name: 'Mercado Libre', icon: 'mercado-libre', iconSet: 'logo', color: '#FFE600', url: 'https://www.mercadolibre.com.mx', kind: 'brand' },
+  { id: 'gbm', name: 'GBM', icon: 'gbm', iconSet: 'logo', color: '#1B1D23', url: 'https://gbm.com', kind: 'brand' },
+  { id: 'cetes', name: 'CetesDirecto', icon: 'cetes', iconSet: 'logo', color: '#9D2449', url: 'https://www.cetesdirecto.com', kind: 'brand' },
+  { id: 'infonavit', name: 'Infonavit', icon: 'infonavit', iconSet: 'logo', color: '#E1251B', url: 'https://micuenta.infonavit.org.mx', kind: 'brand' },
+  { id: 'didi', name: 'DiDi', icon: 'didi', iconSet: 'logo', color: '#FF7A00', url: 'https://www.didiglobal.com', kind: 'brand' },
+  { id: 'izzi', name: 'Izzi', icon: 'izzi', iconSet: 'logo', color: '#00A0E3', url: 'https://www.izzi.mx', kind: 'brand' },
+  { id: 'telmex', name: 'Telmex', icon: 'telmex', iconSet: 'logo', color: '#005DAA', url: 'https://www.telmex.com', kind: 'brand' },
+  { id: 'gob-mx', name: 'Gobierno de México', icon: 'gob-mx', iconSet: 'logo', color: '#611232', url: 'https://www.gob.mx', kind: 'brand' },
+];
+
 /** Categorías genéricas (Ionicons) para servicios sin logo de marca. */
 export const CATEGORIES: Platform[] = [
   { id: 'cat-bank', name: 'Banco', icon: 'card', iconSet: 'ion', color: '#3FB950', kind: 'category' },
@@ -69,7 +107,7 @@ export const CATEGORIES: Platform[] = [
   { id: 'cat-home', name: 'Hogar / Servicios', icon: 'home', iconSet: 'ion', color: '#2DD4BF', kind: 'category' },
 ];
 
-const BY_ID = new Map([...BRANDS, ...CATEGORIES].map((p) => [p.id, p]));
+const BY_ID = new Map([...BRANDS, ...LOGOS, ...CATEGORIES].map((p) => [p.id, p]));
 
 export function getPlatform(id: string | undefined): Platform | undefined {
   return id ? BY_ID.get(id) : undefined;
