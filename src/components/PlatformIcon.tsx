@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { getPlatform } from '@/constants/platforms';
-import { LOGO_FILL, RASTER_LOGOS, SVG_LOGOS } from '@/constants/platformLogos';
+import { LOGO_COVER, LOGO_FILL, RASTER_LOGOS, SVG_LOGOS } from '@/constants/platformLogos';
 
 /** Luminancia relativa aproximada (0..1) de un color hex. */
 function luminance(hex: string): number {
@@ -47,6 +47,7 @@ export function PlatformIcon({
     const raster = RASTER_LOGOS[known.icon];
     // Logos que ya traen fondo: se dibujan a sangre sobre un tile de su mismo color.
     const fillBg = LOGO_FILL[known.icon];
+    const cover = !!LOGO_COVER[known.icon];
     const logoSize = fillBg ? size : Math.round(size * 0.62);
     return (
       <View
@@ -56,7 +57,7 @@ export function PlatformIcon({
         ]}
       >
         {Logo ? (
-          <Logo width={logoSize} height={logoSize} />
+          <Logo width={logoSize} height={logoSize} preserveAspectRatio={cover ? 'xMidYMid slice' : undefined} />
         ) : raster ? (
           <Image source={raster} style={{ width: logoSize, height: logoSize }} contentFit={fillBg ? 'cover' : 'contain'} />
         ) : (

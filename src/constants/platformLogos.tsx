@@ -88,8 +88,16 @@ export const LOGO_FILL: Record<string, string> = {
   gbm: '#101117',
   'mercado-libre': '#FFE600',
   'mercado-pago': '#2ABCFF',
-  telmex: '#009ADA',
   stori: '#5FCF87',
   'hbo-max': '#000000',
   didi: '#FF4B01',
+};
+
+/**
+ * Logos SVG `fill` cuyo arte va recortado a sangre (cover/slice) en vez de
+ * encajar con letterbox: su contenido está centrado y se ve mejor llenando el
+ * tile (p. ej. GBM, un wordmark ancho que con letterbox quedaría diminuto).
+ */
+export const LOGO_COVER: Record<string, true> = {
+  gbm: true,
 };
