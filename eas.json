@@ -18,7 +18,8 @@
     "production": {
       "channel": "production",
       "autoIncrement": true,
-      "android": { "buildType": "app-bundle" }
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
     }
   },
   "submit": {
