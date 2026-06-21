@@ -77,3 +77,19 @@ export const RASTER_LOGOS: Record<string, number> = {
   'hbo-max': HboMaxLogo,
   stori: StoriLogo,
 };
+
+/**
+ * Logos que ya traen su propio fondo de color: en vez del tile blanco se dibujan
+ * a sangre sobre un tile del mismo color (el valor es ese color de fondo). El
+ * resto se sigue mostrando centrado sobre tile blanco.
+ */
+export const LOGO_FILL: Record<string, string> = {
+  nintendo: '#E60012',
+  gbm: '#101117',
+  'mercado-libre': '#FFE600',
+  'mercado-pago': '#2ABCFF',
+  telmex: '#009ADA',
+  stori: '#5FCF87',
+  'hbo-max': '#000000',
+  didi: '#FF4B01',
+};
