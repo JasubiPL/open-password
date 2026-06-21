@@ -9,12 +9,24 @@
  * El mensaje es **genérico** (no revela títulos ni datos de las entradas), apto
  * para mostrarse en la pantalla de bloqueo.
  */
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type * as ExpoNotifications from 'expo-notifications';
+
+/**
+ * Expo Go (SDK 53+) ya no incluye `expo-notifications`: cargarlo ahí lanza un
+ * error ruidoso. Detectamos Expo Go para no tocar el módulo y degradar en
+ * silencio; en development/standalone builds funciona normal.
+ */
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 let cached: typeof ExpoNotifications | null | undefined;
 
 function getModule(): typeof ExpoNotifications | null {
   if (cached !== undefined) return cached;
+  if (isExpoGo) {
+    cached = null;
+    return cached;
+  }
   try {
     cached = require('expo-notifications') as typeof ExpoNotifications;
   } catch {
